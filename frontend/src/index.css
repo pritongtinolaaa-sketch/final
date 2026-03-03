@@ -84,7 +84,17 @@
 }
 
 /* Hide Emergent badge */
-#emergent-badge {
+a#emergent-badge,
+a#emergent-badge * {
   display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  position: absolute !important;
+  left: -9999px !important;
 }
+
+
 
