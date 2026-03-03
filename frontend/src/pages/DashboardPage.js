@@ -12,7 +12,7 @@ import axios from 'axios';
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 export default function DashboardPage() {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const [cookieText, setCookieText] = useState('');
   const [formatType, setFormatType] = useState('auto');
   const [checking, setChecking] = useState(false);
@@ -20,17 +20,27 @@ export default function DashboardPage() {
   const [progress, setProgress] = useState(null);
   const [dragActive, setDragActive] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState([]);
-  const [noticeText, setNoticeText] = useState(() => localStorage.getItem('adminNotice') || '');
+  const [noticeText, setNoticeText] = useState('');
   const [isEditing, setIsEditing] = useState(false);
   const fileInputRef = useRef(null);
   const pollRef = useRef(null);
 
   const headers = useMemo(() => ({ Authorization: `Bearer ${token}` }), [token]);
 
-  const handleSaveNotice = () => {
-    localStorage.setItem('adminNotice', noticeText);
-    setIsEditing(false);
-    toast.success('Notice saved!');
+  useEffect(() => {
+    axios.get(`${API}/admin/notice`, { headers })
+      .then(res => setNoticeText(res.data.message))
+      .catch(() => {});
+  }, [headers]);
+
+  const handleSaveNotice = async () => {
+    try {
+      await axios.post(`${API}/admin/notice`, { message: noticeText }, { headers });
+      setIsEditing(false);
+      toast.success('Notice saved!');
+    } catch {
+      toast.error('Failed to save notice');
+    }
   };
 
   const stopPolling = useCallback(() => {
@@ -207,23 +217,25 @@ export default function DashboardPage() {
             <div className="min-w-[260px] max-w-xs bg-black/60 border border-white/10 rounded-md p-4">
               <div className="flex items-center justify-between mb-2">
                 <span className="font-bebas tracking-widest text-primary text-sm">📌 ADMIN NOTICE</span>
-                {isEditing ? (
-                  <button
-                    onClick={handleSaveNotice}
-                    className="text-xs text-green-400 hover:text-green-300 font-mono"
-                  >
-                    SAVE
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => setIsEditing(true)}
-                    className="text-xs text-white/30 hover:text-white/60 font-mono"
-                  >
-                    EDIT
-                  </button>
+                {user?.is_master && (
+                  isEditing ? (
+                    <button
+                      onClick={handleSaveNotice}
+                      className="text-xs text-green-400 hover:text-green-300 font-mono"
+                    >
+                      SAVE
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => setIsEditing(true)}
+                      className="text-xs text-white/30 hover:text-white/60 font-mono"
+                    >
+                      EDIT
+                    </button>
+                  )
                 )}
               </div>
-              {isEditing ? (
+              {isEditing && user?.is_master ? (
                 <textarea
                   value={noticeText}
                   onChange={(e) => setNoticeText(e.target.value)}
