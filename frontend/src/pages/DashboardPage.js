@@ -201,7 +201,7 @@ export default function DashboardPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="mb-10 flex items-start justify-between gap-6"
+            className="mb-10 flex flex-col sm:flex-row items-start justify-between gap-6"
           >
             {/* Title */}
             <div>
@@ -214,7 +214,7 @@ export default function DashboardPage() {
             </div>
 
             {/* Admin Notice Board */}
-            <div className="min-w-[260px] max-w-xs bg-black/60 border border-white/10 rounded-md p-4">
+            <div className="w-full sm:min-w-[260px] sm:max-w-xs bg-black/60 border border-white/10 rounded-md p-4">
               <div className="flex items-center justify-between mb-2">
                 <span className="font-bebas tracking-widest text-primary text-sm">📌 ADMIN NOTICE</span>
                 {user?.is_master && (
