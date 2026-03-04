@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { LayoutDashboard, History, LogOut, Shield, KeyRound, ScrollText, Gift, Menu, X } from 'lucide-react';
+import { LayoutDashboard, History, LogOut, KeyRound, ScrollText, Gift, Menu, X } from 'lucide-react';
 
 export default function Navbar() {
   const { user, logout } = useAuth();
@@ -30,7 +30,8 @@ export default function Navbar() {
     <nav data-testid="navbar" className="fixed top-0 left-0 right-0 z-50 bg-black/80 backdrop-blur-xl border-b border-white/10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2.5" data-testid="nav-logo" onClick={() => setOpen(false)}>
-          <Shield className="w-5 h-5 text-primary" />
+          {/* ✅ CHANGED: replaced Shield icon with your logo */}
+          <img src="/favicon.ico" alt="Schiro" className="w-6 h-6 object-contain" />
           <span className="font-bebas text-xl tracking-wider text-white">SCHIRO</span>
         </Link>
 
