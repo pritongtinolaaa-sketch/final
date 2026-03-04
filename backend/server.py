@@ -1369,22 +1369,25 @@ app.add_middleware(
 @app.on_event("startup")
 async def seed_master_key():
     global _refresh_task
-    master_key = os.environ['MASTER_KEY']
-    existing = await db.access_keys.find_one({"is_master": True}, {"_id": 0})
-    if not existing:
-        await db.access_keys.insert_one({
-            "id": str(uuid.uuid4()),
-            "key_value": master_key,
-            "label": "Master Key",
-            "max_devices": 999,
-            "active_sessions": [],
-            "is_master": True,
-            "created_at": datetime.now(timezone.utc).isoformat()
-        })
-        logger.info("Master key seeded")
-    elif existing["key_value"] != master_key:
-        await db.access_keys.update_one({"is_master": True}, {"$set": {"key_value": master_key}})
-        logger.info("Master key updated")
+    try:
+        master_key = os.environ['MASTER_KEY']
+        existing = await db.access_keys.find_one({"is_master": True}, {"_id": 0})
+        if not existing:
+            await db.access_keys.insert_one({
+                "id": str(uuid.uuid4()),
+                "key_value": master_key,
+                "label": "Master Key",
+                "max_devices": 999,
+                "active_sessions": [],
+                "is_master": True,
+                "created_at": datetime.now(timezone.utc).isoformat()
+            })
+            logger.info("Master key seeded")
+        elif existing["key_value"] != master_key:
+            await db.access_keys.update_one({"is_master": True}, {"$set": {"key_value": master_key}})
+            logger.info("Master key updated")
+    except Exception as e:
+        logger.error(f"Startup MongoDB error: {e}")
 
     _refresh_task = asyncio.create_task(refresh_free_cookie_tokens())
     logger.info("NFToken auto-refresh task started (every 10 min)")
