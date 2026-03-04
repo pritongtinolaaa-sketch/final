@@ -214,22 +214,19 @@ export default function DashboardPage() {
             </div>
 
             {/* Admin Notice Board */}
-            <div className="w-full sm:min-w-[260px] sm:max-w-xs bg-black/60 border border-white/10 rounded-md p-4">
+            <div className="w-full sm:min-w-[260px] sm:max-w-xs rounded-2xl p-4
+              bg-gradient-to-b from-white/10 to-white/[0.03]
+              border border-white/20
+              shadow-[inset_0_1px_0_rgba(255,255,255,0.15),inset_0_-1px_0_rgba(0,0,0,0.4),0_8px_24px_rgba(0,0,0,0.6)]">
               <div className="flex items-center justify-between mb-2">
                 <span className="font-bebas tracking-widest text-primary text-sm">📌 ADMIN NOTICE</span>
                 {user?.is_master && (
                   isEditing ? (
-                    <button
-                      onClick={handleSaveNotice}
-                      className="text-xs text-green-400 hover:text-green-300 font-mono"
-                    >
+                    <button onClick={handleSaveNotice} className="text-xs text-green-400 hover:text-green-300 font-mono">
                       SAVE
                     </button>
                   ) : (
-                    <button
-                      onClick={() => setIsEditing(true)}
-                      className="text-xs text-white/30 hover:text-white/60 font-mono"
-                    >
+                    <button onClick={() => setIsEditing(true)} className="text-xs text-white/30 hover:text-white/60 font-mono">
                       EDIT
                     </button>
                   )
@@ -239,7 +236,7 @@ export default function DashboardPage() {
                 <textarea
                   value={noticeText}
                   onChange={(e) => setNoticeText(e.target.value)}
-                  className="w-full h-24 bg-black/80 border border-white/10 rounded text-xs text-white/70 p-2 resize-none focus:border-primary focus:outline-none font-mono"
+                  className="w-full h-24 bg-black/80 border border-white/10 rounded-xl text-xs text-white/70 p-2 resize-none focus:border-primary focus:outline-none font-mono"
                   placeholder="Type your notice here..."
                 />
               ) : (
@@ -250,16 +247,19 @@ export default function DashboardPage() {
             </div>
           </motion.div>
 
+          {/* Main Input Card */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.1 }}
-            className="bg-black/60 backdrop-blur-md border border-white/10 rounded-md overflow-hidden"
+            className="rounded-2xl overflow-hidden
+              bg-gradient-to-b from-white/10 to-white/[0.03]
+              border border-white/20
+              shadow-[inset_0_1px_0_rgba(255,255,255,0.15),inset_0_-1px_0_rgba(0,0,0,0.4),0_8px_24px_rgba(0,0,0,0.6)]"
           >
             <Tabs defaultValue="paste" className="w-full">
-              {/* ✅ FIXED: stacks on mobile so select doesn't get cut off */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-4 pt-4 pb-0">
-                <TabsList className="bg-black/50 border border-white/5 w-full sm:w-auto" data-testid="input-tabs">
+                <TabsList className="bg-black/30 border border-white/5 w-full sm:w-auto" data-testid="input-tabs">
                   <TabsTrigger
                     value="paste"
                     data-testid="tab-paste"
@@ -279,14 +279,13 @@ export default function DashboardPage() {
                 </TabsList>
 
                 <Select value={formatType} onValueChange={setFormatType}>
-                  {/* ✅ FIXED: full width on mobile */}
                   <SelectTrigger
-                    className="w-full sm:w-40 bg-black/50 border-white/10 text-white/70 h-9"
+                    className="w-full sm:w-40 bg-black/30 border-white/10 text-white/70 h-9 rounded-xl"
                     data-testid="format-select"
                   >
                     <SelectValue placeholder="Format" />
                   </SelectTrigger>
-                  <SelectContent className="bg-[#0A0A0A] border-white/10">
+                  <SelectContent className="bg-[#0A0A0A] border-white/10 rounded-xl">
                     <SelectItem value="auto">Auto Detect</SelectItem>
                     <SelectItem value="netscape">Netscape</SelectItem>
                     <SelectItem value="json">JSON</SelectItem>
@@ -295,15 +294,13 @@ export default function DashboardPage() {
               </div>
 
               <TabsContent value="paste" className="px-4 pb-4 mt-3">
-                {/* ✅ FIXED: box-border prevents overflow, shorter on mobile */}
                 <textarea
                   data-testid="cookie-textarea"
                   value={cookieText}
                   onChange={(e) => setCookieText(e.target.value)}
                   placeholder={`Paste Netflix cookies here...\n\nSupported formats:\n- Netscape (tab-separated)\n- JSON array [{name, value, ...}]\n- key=value; pairs\n\nSeparate multiple cookies with 3+ empty lines or ===== dividers`}
-                  className="w-full h-48 sm:h-64 box-border bg-black/80 border border-white/10 rounded font-mono text-sm text-green-400 p-3 resize-none focus:border-primary focus:ring-1 focus:ring-primary/50 focus:outline-none placeholder:text-white/20 transition-colors"
+                  className="w-full h-48 sm:h-64 box-border bg-black/40 border border-white/10 rounded-xl font-mono text-sm text-green-400 p-3 resize-none focus:border-primary focus:ring-1 focus:ring-primary/50 focus:outline-none placeholder:text-white/20 transition-colors"
                 />
-                {/* ✅ FIXED: button full width on mobile */}
                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mt-4">
                   <span className="text-xs text-white/20 font-mono">
                     {cookieText.length > 0 ? `${cookieText.length} chars` : ''}
@@ -312,7 +309,7 @@ export default function DashboardPage() {
                     onClick={handleCheckPaste}
                     disabled={checking || !cookieText.trim()}
                     data-testid="check-paste-btn"
-                    className="w-full sm:w-auto bg-primary hover:bg-red-700 text-white font-bebas tracking-widest text-base uppercase rounded-sm shadow-[0_0_15px_rgba(229,9,20,0.4)] transition-all hover:scale-105 active:scale-95 px-8 h-11"
+                    className="w-full sm:w-auto bg-primary hover:bg-red-700 text-white font-bebas tracking-widest text-base uppercase rounded-xl shadow-[0_0_15px_rgba(229,9,20,0.4)] transition-all hover:scale-105 active:scale-95 px-8 h-11"
                   >
                     {checking ? (
                       <Loader2 className="w-5 h-5 animate-spin" />
@@ -333,7 +330,7 @@ export default function DashboardPage() {
                   onDragLeave={handleDrag}
                   onDragOver={handleDrag}
                   onDrop={handleDrop}
-                  className={`border-2 border-dashed rounded-md text-center transition-all ${
+                  className={`border-2 border-dashed rounded-2xl text-center transition-all ${
                     selectedFiles.length > 0 ? 'p-6' : 'p-8 sm:p-12'
                   } ${
                     dragActive
@@ -387,20 +384,19 @@ export default function DashboardPage() {
                         variant="outline"
                         onClick={() => fileInputRef.current?.click()}
                         data-testid="browse-files-btn"
-                        className="bg-transparent border-white/20 hover:border-white text-white font-bebas tracking-widest uppercase rounded-sm hover:bg-white/5"
+                        className="bg-transparent border-white/20 hover:border-white text-white font-bebas tracking-widest uppercase rounded-xl hover:bg-white/5"
                       >
                         BROWSE FILES
                       </Button>
                     </div>
                   )}
                 </div>
-                {/* ✅ FIXED: button full width on mobile */}
                 <div className="flex justify-end mt-4">
                   <Button
                     onClick={handleCheckFile}
                     disabled={checking || selectedFiles.length === 0}
                     data-testid="check-file-btn"
-                    className="w-full sm:w-auto bg-primary hover:bg-red-700 text-white font-bebas tracking-widest text-base uppercase rounded-sm shadow-[0_0_15px_rgba(229,9,20,0.4)] transition-all hover:scale-105 active:scale-95 px-8 h-11"
+                    className="w-full sm:w-auto bg-primary hover:bg-red-700 text-white font-bebas tracking-widest text-base uppercase rounded-xl shadow-[0_0_15px_rgba(229,9,20,0.4)] transition-all hover:scale-105 active:scale-95 px-8 h-11"
                   >
                     {checking ? (
                       <Loader2 className="w-5 h-5 animate-spin" />
@@ -423,7 +419,10 @@ export default function DashboardPage() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0 }}
-                className="mt-8 bg-black/60 backdrop-blur-md border border-white/10 rounded-md p-6"
+                className="mt-8 rounded-2xl p-6
+                  bg-gradient-to-b from-white/10 to-white/[0.03]
+                  border border-white/20
+                  shadow-[inset_0_1px_0_rgba(255,255,255,0.15),inset_0_-1px_0_rgba(0,0,0,0.4),0_8px_24px_rgba(0,0,0,0.6)]"
                 data-testid="progress-section"
               >
                 <div className="flex items-center justify-between mb-3">
@@ -465,6 +464,7 @@ export default function DashboardPage() {
                 transition={{ duration: 0.5 }}
                 className="mt-10"
               >
+                {/* Results Summary Bar */}
                 <div
                   className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6 pb-6 border-b border-white/5"
                   data-testid="results-summary"
@@ -494,7 +494,7 @@ export default function DashboardPage() {
                       onClick={handleExportResults}
                       data-testid="export-results-btn"
                       variant="outline"
-                      className="w-full sm:w-auto bg-transparent border-green-500/30 text-green-400 hover:bg-green-500/10 hover:border-green-500/50 font-bebas tracking-widest uppercase rounded-sm text-sm gap-2"
+                      className="w-full sm:w-auto bg-transparent border-green-500/30 text-green-400 hover:bg-green-500/10 hover:border-green-500/50 font-bebas tracking-widest uppercase rounded-xl text-sm gap-2"
                     >
                       <Download className="w-4 h-4" />
                       EXPORT VALID
@@ -502,6 +502,7 @@ export default function DashboardPage() {
                   )}
                 </div>
 
+                {/* Valid */}
                 {results.results.filter(r => r.status === 'valid').length > 0 && (
                   <div className="mb-8" data-testid="valid-section">
                     <div className="flex items-center gap-3 mb-4">
@@ -524,6 +525,7 @@ export default function DashboardPage() {
                   </div>
                 )}
 
+                {/* Expired */}
                 {results.results.filter(r => r.status === 'expired').length > 0 && (
                   <div className="mb-8" data-testid="expired-section">
                     <div className="flex items-center gap-3 mb-4">
@@ -546,6 +548,7 @@ export default function DashboardPage() {
                   </div>
                 )}
 
+                {/* Invalid */}
                 {results.results.filter(r => r.status === 'invalid').length > 0 && (
                   <div className="mb-8" data-testid="invalid-section">
                     <div className="flex items-center gap-3 mb-4">
