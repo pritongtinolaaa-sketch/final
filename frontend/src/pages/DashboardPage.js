@@ -196,7 +196,7 @@ export default function DashboardPage() {
           background: 'radial-gradient(ellipse at top center, rgba(229,9,20,0.08) 0%, transparent 60%)',
         }}
       >
-        <div className="max-w-5xl mx-auto px-6 py-6 md:py-10">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 md:py-10">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -257,12 +257,13 @@ export default function DashboardPage() {
             className="bg-black/60 backdrop-blur-md border border-white/10 rounded-md overflow-hidden"
           >
             <Tabs defaultValue="paste" className="w-full">
-              <div className="flex items-center justify-between px-4 pt-4 pb-0">
-                <TabsList className="bg-black/50 border border-white/5" data-testid="input-tabs">
+              {/* ✅ FIXED: stacks on mobile so select doesn't get cut off */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-4 pt-4 pb-0">
+                <TabsList className="bg-black/50 border border-white/5 w-full sm:w-auto" data-testid="input-tabs">
                   <TabsTrigger
                     value="paste"
                     data-testid="tab-paste"
-                    className="data-[state=active]:bg-primary/20 data-[state=active]:text-white text-white/50 gap-2"
+                    className="flex-1 sm:flex-none data-[state=active]:bg-primary/20 data-[state=active]:text-white text-white/50 gap-2"
                   >
                     <Terminal className="w-4 h-4" />
                     Paste Cookie
@@ -270,7 +271,7 @@ export default function DashboardPage() {
                   <TabsTrigger
                     value="upload"
                     data-testid="tab-upload"
-                    className="data-[state=active]:bg-primary/20 data-[state=active]:text-white text-white/50 gap-2"
+                    className="flex-1 sm:flex-none data-[state=active]:bg-primary/20 data-[state=active]:text-white text-white/50 gap-2"
                   >
                     <Upload className="w-4 h-4" />
                     Upload File
@@ -278,8 +279,9 @@ export default function DashboardPage() {
                 </TabsList>
 
                 <Select value={formatType} onValueChange={setFormatType}>
+                  {/* ✅ FIXED: full width on mobile */}
                   <SelectTrigger
-                    className="w-40 bg-black/50 border-white/10 text-white/70 h-9"
+                    className="w-full sm:w-40 bg-black/50 border-white/10 text-white/70 h-9"
                     data-testid="format-select"
                   >
                     <SelectValue placeholder="Format" />
@@ -293,14 +295,16 @@ export default function DashboardPage() {
               </div>
 
               <TabsContent value="paste" className="px-4 pb-4 mt-3">
+                {/* ✅ FIXED: box-border prevents overflow, shorter on mobile */}
                 <textarea
                   data-testid="cookie-textarea"
                   value={cookieText}
                   onChange={(e) => setCookieText(e.target.value)}
                   placeholder={`Paste Netflix cookies here...\n\nSupported formats:\n- Netscape (tab-separated)\n- JSON array [{name, value, ...}]\n- key=value; pairs\n\nSeparate multiple cookies with 3+ empty lines or ===== dividers`}
-                  className="w-full h-64 bg-black/80 border border-white/10 rounded font-mono text-sm text-green-400 p-4 resize-none focus:border-primary focus:ring-1 focus:ring-primary/50 focus:outline-none placeholder:text-white/20 transition-colors"
+                  className="w-full h-48 sm:h-64 box-border bg-black/80 border border-white/10 rounded font-mono text-sm text-green-400 p-3 resize-none focus:border-primary focus:ring-1 focus:ring-primary/50 focus:outline-none placeholder:text-white/20 transition-colors"
                 />
-                <div className="flex items-center justify-between mt-4">
+                {/* ✅ FIXED: button full width on mobile */}
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mt-4">
                   <span className="text-xs text-white/20 font-mono">
                     {cookieText.length > 0 ? `${cookieText.length} chars` : ''}
                   </span>
@@ -308,7 +312,7 @@ export default function DashboardPage() {
                     onClick={handleCheckPaste}
                     disabled={checking || !cookieText.trim()}
                     data-testid="check-paste-btn"
-                    className="bg-primary hover:bg-red-700 text-white font-bebas tracking-widest text-base uppercase rounded-sm shadow-[0_0_15px_rgba(229,9,20,0.4)] transition-all hover:scale-105 active:scale-95 px-8 h-11"
+                    className="w-full sm:w-auto bg-primary hover:bg-red-700 text-white font-bebas tracking-widest text-base uppercase rounded-sm shadow-[0_0_15px_rgba(229,9,20,0.4)] transition-all hover:scale-105 active:scale-95 px-8 h-11"
                   >
                     {checking ? (
                       <Loader2 className="w-5 h-5 animate-spin" />
@@ -330,14 +334,14 @@ export default function DashboardPage() {
                   onDragOver={handleDrag}
                   onDrop={handleDrop}
                   className={`border-2 border-dashed rounded-md text-center transition-all ${
-                    selectedFiles.length > 0 ? 'p-6' : 'p-12'
+                    selectedFiles.length > 0 ? 'p-6' : 'p-8 sm:p-12'
                   } ${
                     dragActive
                       ? 'border-primary bg-primary/5 shadow-[0_0_30px_rgba(229,9,20,0.2)]'
                       : 'border-white/15 hover:border-white/25'
                   }`}
                 >
-                  <Upload className={`w-12 h-12 mx-auto mb-4 ${dragActive ? 'text-primary' : 'text-white/20'}`} />
+                  <Upload className={`w-10 h-10 sm:w-12 sm:h-12 mx-auto mb-4 ${dragActive ? 'text-primary' : 'text-white/20'}`} />
                   {selectedFiles.length > 0 ? (
                     <div>
                       <p className="text-white font-medium" data-testid="selected-filename">
@@ -346,7 +350,7 @@ export default function DashboardPage() {
                       <div className="mt-2 space-y-1">
                         {selectedFiles.map((f, i) => (
                           <div key={i} className="flex items-center justify-center gap-2 text-sm text-white/50">
-                            <span className="font-mono truncate max-w-[200px]">{f.name}</span>
+                            <span className="font-mono truncate max-w-[160px] sm:max-w-[200px]">{f.name}</span>
                             <span className="text-white/20">({(f.size / 1024).toFixed(1)} KB)</span>
                             <button
                               onClick={() => setSelectedFiles(prev => prev.filter((_, idx) => idx !== i))}
@@ -368,8 +372,8 @@ export default function DashboardPage() {
                     </div>
                   ) : (
                     <div>
-                      <p className="text-white/40 mb-1">Drag & drop your cookie files here</p>
-                      <p className="text-white/20 text-sm mb-4">Supports .txt and .json files — select multiple at once</p>
+                      <p className="text-white/40 mb-1 text-sm sm:text-base">Drag & drop your cookie files here</p>
+                      <p className="text-white/20 text-xs sm:text-sm mb-4">Supports .txt and .json files — select multiple at once</p>
                       <input
                         ref={fileInputRef}
                         type="file"
@@ -390,12 +394,13 @@ export default function DashboardPage() {
                     </div>
                   )}
                 </div>
+                {/* ✅ FIXED: button full width on mobile */}
                 <div className="flex justify-end mt-4">
                   <Button
                     onClick={handleCheckFile}
                     disabled={checking || selectedFiles.length === 0}
                     data-testid="check-file-btn"
-                    className="bg-primary hover:bg-red-700 text-white font-bebas tracking-widest text-base uppercase rounded-sm shadow-[0_0_15px_rgba(229,9,20,0.4)] transition-all hover:scale-105 active:scale-95 px-8 h-11"
+                    className="w-full sm:w-auto bg-primary hover:bg-red-700 text-white font-bebas tracking-widest text-base uppercase rounded-sm shadow-[0_0_15px_rgba(229,9,20,0.4)] transition-all hover:scale-105 active:scale-95 px-8 h-11"
                   >
                     {checking ? (
                       <Loader2 className="w-5 h-5 animate-spin" />
@@ -460,14 +465,12 @@ export default function DashboardPage() {
                 transition={{ duration: 0.5 }}
                 className="mt-10"
               >
-                {/* ✅ FIXED: stacks vertically on mobile, side-by-side on sm+ */}
                 <div
                   className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6 pb-6 border-b border-white/5"
                   data-testid="results-summary"
                 >
                   <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6">
                     <h2 className="font-bebas text-2xl tracking-wider text-white">RESULTS</h2>
-                    {/* ✅ FIXED: wraps stats onto next line on mobile */}
                     <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
                       <span className="flex items-center gap-1.5 text-white/60">
                         Total: <strong className="text-white">{results.total}</strong>
@@ -486,7 +489,6 @@ export default function DashboardPage() {
                       </span>
                     </div>
                   </div>
-                  {/* ✅ FIXED: export button full width on mobile */}
                   {results.valid_count > 0 && (
                     <Button
                       onClick={handleExportResults}
