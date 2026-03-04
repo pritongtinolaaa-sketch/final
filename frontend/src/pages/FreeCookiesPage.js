@@ -3,11 +3,10 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { toast } from 'sonner';
 import {
   Gift, Trash2, Copy, Check, Loader2, Mail, CreditCard, Globe, Calendar,
-  Clock, Users, Key, ChevronDown, AlertCircle, Link2, Settings, RefreshCw, Tv, Monitor, Smartphone
+  Clock, Users, Key, AlertCircle, Link2, Settings, RefreshCw, Tv, Monitor, Smartphone, X
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
@@ -51,9 +50,60 @@ function InfoRow({ icon, label, value }) {
   );
 }
 
-function FreeCookieCard({ cookie, index, isAdmin, onDelete }) {
-  const [cookieOpen, setCookieOpen] = useState(false);
-  const [browserCookieOpen, setBrowserCookieOpen] = useState(false);
+// Small collapsed card
+function FreeCookieSmallCard({ cookie, index, isAdmin, onDelete, onClick }) {
+  const isAlive = cookie.is_alive !== false;
+  return (
+    <motion.div
+      data-testid={`free-cookie-card-${index}`}
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: index * 0.04 }}
+      onClick={onClick}
+      className="cursor-pointer bg-black/60 backdrop-blur-md border border-white/10 rounded-md p-4 hover:border-green-500/30 hover:bg-black/80 transition-all active:scale-[0.98]"
+    >
+      {/* Top row */}
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <div className={`w-2 h-2 rounded-full shrink-0 ${isAlive ? 'bg-green-400 shadow-[0_0_6px_rgba(74,222,128,0.5)]' : 'bg-red-400 shadow-[0_0_6px_rgba(248,113,113,0.5)]'}`} />
+          <span className="font-mono text-xs text-white/30">#{index + 1}</span>
+          <Badge className={`${isAlive ? 'bg-green-500/20 text-green-400 border-green-500/30' : 'bg-red-500/20 text-red-400 border-red-500/30'} border text-[10px] font-mono px-1.5 py-0`}>
+            {isAlive ? 'ALIVE' : 'DEAD'}
+          </Badge>
+        </div>
+        {isAdmin && (
+          <button
+            onClick={e => { e.stopPropagation(); onDelete(cookie.id); }}
+            className="text-white/15 hover:text-red-400 transition-colors p-1"
+            data-testid={`delete-free-cookie-${index}`}
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+          </button>
+        )}
+      </div>
+
+      {/* Email */}
+      <div className="flex items-center gap-2 mb-1.5">
+        <Mail className="w-3.5 h-3.5 text-white/20 shrink-0" />
+        <span className="text-white/70 text-xs font-mono truncate">{cookie.email || '—'}</span>
+      </div>
+
+      {/* Plan */}
+      <div className="flex items-center gap-2">
+        <CreditCard className="w-3.5 h-3.5 text-white/20 shrink-0" />
+        <span className="text-white/40 text-xs">{cookie.plan || '—'}</span>
+      </div>
+
+      {/* Tap hint */}
+      <div className="mt-3 pt-2 border-t border-white/5 text-[10px] text-white/15 font-mono text-center tracking-widest">
+        TAP TO USE
+      </div>
+    </motion.div>
+  );
+}
+
+// Full modal
+function FreeCookieModal({ cookie, index, isAdmin, onClose }) {
   const [tvCode, setTvCode] = useState('');
   const [tvLoading, setTvLoading] = useState(false);
   const [tvResult, setTvResult] = useState(null);
@@ -61,6 +111,8 @@ function FreeCookieCard({ cookie, index, isAdmin, onDelete }) {
   const [currentNftoken, setCurrentNftoken] = useState(cookie.nftoken);
   const [currentNftokenLink, setCurrentNftokenLink] = useState(cookie.nftoken_link);
   const [lastRefreshed, setLastRefreshed] = useState(cookie.last_refreshed);
+  const [showCookie, setShowCookie] = useState(false);
+  const [showBrowserCookies, setShowBrowserCookies] = useState(false);
   const { token } = useAuth();
 
   const isAlive = cookie.is_alive !== false;
@@ -75,11 +127,8 @@ function FreeCookieCard({ cookie, index, isAdmin, onDelete }) {
         cookie_id: cookie.id
       }, { headers: { Authorization: `Bearer ${token}` } });
       setTvResult(res.data);
-      if (res.data.success) {
-        toast.success(res.data.message);
-      } else {
-        toast.error(res.data.message);
-      }
+      if (res.data.success) toast.success(res.data.message);
+      else toast.error(res.data.message);
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Failed to activate TV');
     } finally {
@@ -105,193 +154,200 @@ function FreeCookieCard({ cookie, index, isAdmin, onDelete }) {
   };
 
   return (
-    <div
-      data-testid={`free-cookie-card-${index}`}
-      className="bg-black/60 backdrop-blur-md border border-white/10 rounded-md overflow-hidden hover:border-green-500/20 transition-colors"
-    >
-      {/* Header */}
-      <div className="px-5 py-4 border-b border-white/5 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className={`w-2 h-2 rounded-full ${isAlive ? 'bg-green-400 shadow-[0_0_6px_rgba(74,222,128,0.5)]' : 'bg-red-400 shadow-[0_0_6px_rgba(248,113,113,0.5)]'}`} />
-          <span className="font-mono text-xs text-white/30">FREE COOKIE #{index + 1}</span>
-          <Badge className={`${isAlive ? 'bg-green-500/20 text-green-400 border-green-500/30' : 'bg-red-500/20 text-red-400 border-red-500/30'} border text-xs font-mono`}>
-            {isAlive ? 'ALIVE' : 'DEAD'}
-          </Badge>
-          {lastRefreshed && (
-            <span className="text-[10px] text-white/15 font-mono flex items-center gap-1">
-              <RefreshCw className="w-2.5 h-2.5" />
-              {new Date(lastRefreshed).toLocaleTimeString()}
-            </span>
-          )}
-        </div>
-        {isAdmin && (
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => onDelete(cookie.id)}
-            className="text-white/15 hover:text-red-400 hover:bg-red-500/10"
-            data-testid={`delete-free-cookie-${index}`}
-          >
-            <Trash2 className="w-3.5 h-3.5" />
-          </Button>
-        )}
-      </div>
+    <AnimatePresence>
+      {/* Backdrop */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        onClick={onClose}
+        className="fixed inset-0 bg-black/75 backdrop-blur-sm z-40"
+      />
 
-      {/* Body */}
-      <div className="px-5 py-4 space-y-3">
-        <InfoRow icon={<Mail className="w-4 h-4" />} label="Email" value={cookie.email} />
-        <InfoRow icon={<CreditCard className="w-4 h-4" />} label="Plan" value={cookie.plan} />
-        <InfoRow icon={<Globe className="w-4 h-4" />} label="Country" value={cookie.country} />
-        <InfoRow icon={<Calendar className="w-4 h-4" />} label="Since" value={cookie.member_since} />
-        <InfoRow icon={<Clock className="w-4 h-4" />} label="Next Bill" value={cookie.next_billing} />
-        {cookie.profiles && cookie.profiles.length > 0 && (
-          <InfoRow icon={<Users className="w-4 h-4" />} label="Profiles" value={cookie.profiles.join(', ')} />
-        )}
-      </div>
-
-      {/* NFToken */}
-      {currentNftoken && (
-        <div className="px-5 py-3 border-t border-white/5 space-y-2">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Key className="w-4 h-4 text-primary/60" />
-              <span className="text-xs text-white/40 uppercase tracking-wide">NFToken</span>
-            </div>
-            <button
-              onClick={handleRefreshToken}
-              disabled={tokenRefreshing}
-              data-testid={`refresh-nftoken-${index}`}
-              className="flex items-center gap-1 text-[10px] text-white/30 hover:text-green-400 transition-colors disabled:opacity-50"
-            >
-              {tokenRefreshing
-                ? <Loader2 className="w-3 h-3 animate-spin" />
-                : <RefreshCw className="w-3 h-3" />
-              }
-              <span className="uppercase tracking-wide font-mono">Refresh Token</span>
-            </button>
-          </div>
-          <div className="flex items-center gap-2">
-            <code className="flex-1 font-mono text-xs text-primary/80 bg-black/40 px-3 py-2 rounded truncate" data-testid={`free-nftoken-${index}`}>
-              {currentNftoken}
-            </code>
-            <CopyBtn text={currentNftoken} testId={`free-nftoken-copy-${index}`} />
-          </div>
-          {currentNftokenLink && (
-            <div className="flex items-center gap-2 mt-2">
-              <a
-                href={currentNftokenLink}
-                target="_blank"
-                rel="noopener noreferrer"
-                data-testid={`free-nftoken-link-${index}`}
-                className="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-sm text-sm font-bebas tracking-widest uppercase bg-primary/15 text-primary border border-primary/30 hover:bg-primary/25 transition-all hover:scale-[1.01] active:scale-[0.99]"
-              >
-                <Link2 className="w-4 h-4" />
-                Open Netflix with Token
-              </a>
-              <a
-                href={`https://www.netflix.com/unsupported?nftoken=${currentNftoken}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                data-testid={`free-nftoken-unsupported-${index}`}
-                className="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-sm text-sm font-bebas tracking-widest uppercase bg-blue-500/15 text-blue-400 border border-blue-500/30 hover:bg-blue-500/25 transition-all hover:scale-[1.01] active:scale-[0.99]"
-              >
-                <Smartphone className="w-4 h-4" />
-                Open in Phone
-              </a>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* TV Sign-In Code */}
-      {isAlive && (
-        <div className="px-5 py-4 border-t border-white/5">
-          <div className="flex items-center gap-2 mb-3">
-            <Tv className="w-4 h-4 text-blue-400/60" />
-            <span className="text-xs text-white/40 uppercase tracking-wide">Sign In on TV</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Input
-              value={tvCode}
-              onChange={e => setTvCode(e.target.value)}
-              placeholder="Enter TV code (e.g. 12345678)"
-              className="bg-black/50 border-white/10 focus:border-blue-400 text-white placeholder:text-white/20 h-10 font-mono text-sm"
-              data-testid={`tv-code-input-${index}`}
-              disabled={tvLoading}
-              onKeyDown={e => e.key === 'Enter' && handleTvCode()}
-            />
-            <Button
-              onClick={handleTvCode}
-              disabled={tvLoading || !tvCode.trim()}
-              data-testid={`tv-code-submit-${index}`}
-              className="bg-blue-500/15 text-blue-400 border border-blue-500/30 hover:bg-blue-500/25 font-bebas tracking-widest uppercase rounded-sm h-10 px-5 shrink-0"
-            >
-              {tvLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Monitor className="w-4 h-4 mr-1.5" />ACTIVATE</>}
-            </Button>
-          </div>
-          {tvResult && (
-            <div className={`mt-2 text-xs px-3 py-2 rounded ${tvResult.success ? 'bg-green-500/10 text-green-400 border border-green-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'}`} data-testid={`tv-code-result-${index}`}>
-              {tvResult.message}
-            </div>
-          )}
-          <p className="text-[10px] text-white/15 mt-2">Open Netflix on your TV, select "Sign In" and enter the 8-digit code shown.</p>
-        </div>
-      )}
-
-      {/* Browser Cookies - Admin only */}
-      {isAdmin && cookie.browser_cookies && (
-        <Collapsible open={browserCookieOpen} onOpenChange={setBrowserCookieOpen}>
-          <div className="border-t border-white/5">
-            <CollapsibleTrigger
-              className="w-full px-5 py-3 flex items-center justify-between text-xs text-green-400/50 hover:text-green-400/80 transition-colors"
-              data-testid={`free-browser-cookies-expand-${index}`}
-            >
-              <span className="font-mono uppercase tracking-wide">
-                {browserCookieOpen ? 'Hide' : 'View'} Browser Cookies
+      {/* Modal */}
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95, y: 24 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: 12 }}
+        transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+        className="fixed inset-x-4 top-[5%] bottom-[5%] sm:inset-auto sm:left-1/2 sm:-translate-x-1/2 sm:top-[8%] sm:w-[500px] sm:max-h-[84vh] bg-[#0a0a0a] border border-white/10 rounded-md z-50 flex flex-col overflow-hidden"
+      >
+        {/* Modal Header */}
+        <div className="px-5 py-4 border-b border-white/5 flex items-center justify-between shrink-0">
+          <div className="flex items-center gap-3">
+            <div className={`w-2 h-2 rounded-full ${isAlive ? 'bg-green-400 shadow-[0_0_6px_rgba(74,222,128,0.5)]' : 'bg-red-400'}`} />
+            <span className="font-mono text-xs text-white/40">FREE COOKIE #{index + 1}</span>
+            <Badge className={`${isAlive ? 'bg-green-500/20 text-green-400 border-green-500/30' : 'bg-red-500/20 text-red-400 border-red-500/30'} border text-[10px] font-mono px-1.5`}>
+              {isAlive ? 'ALIVE' : 'DEAD'}
+            </Badge>
+            {lastRefreshed && (
+              <span className="text-[10px] text-white/15 font-mono flex items-center gap-1">
+                <RefreshCw className="w-2.5 h-2.5" />
+                {new Date(lastRefreshed).toLocaleTimeString()}
               </span>
-              <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${browserCookieOpen ? 'rotate-180' : ''}`} />
-            </CollapsibleTrigger>
-            <CollapsibleContent>
-              <div className="relative px-5 pb-4">
-                <pre className="text-xs font-mono text-green-400/60 bg-black/60 rounded p-4 overflow-x-auto max-h-40 overflow-y-auto whitespace-pre-wrap break-all">
-                  {cookie.browser_cookies}
-                </pre>
-                <div className="absolute top-2 right-7">
-                  <CopyBtn text={cookie.browser_cookies} testId={`free-browser-cookies-copy-${index}`} />
-                </div>
-              </div>
-            </CollapsibleContent>
+            )}
           </div>
-        </Collapsible>
-      )}
+          <button onClick={onClose} className="text-white/30 hover:text-white transition-colors p-1">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
 
-      {/* Full Cookie */}
-      {cookie.full_cookie && (
-        <Collapsible open={cookieOpen} onOpenChange={setCookieOpen}>
-          <div className="border-t border-white/5">
-            <CollapsibleTrigger
-              className="w-full px-5 py-3 flex items-center justify-between text-xs text-white/30 hover:text-white/50 transition-colors"
-              data-testid={`free-cookie-expand-${index}`}
-            >
-              <span className="font-mono uppercase tracking-wide">
-                {cookieOpen ? 'Hide' : 'View'} Original Cookie
-              </span>
-              <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${cookieOpen ? 'rotate-180' : ''}`} />
-            </CollapsibleTrigger>
-            <CollapsibleContent>
-              <div className="relative px-5 pb-4">
-                <pre className="text-xs font-mono text-white/40 bg-black/60 rounded p-4 overflow-x-auto max-h-40 overflow-y-auto whitespace-pre-wrap break-all">
-                  {cookie.full_cookie}
-                </pre>
-                <div className="absolute top-2 right-7">
-                  <CopyBtn text={cookie.full_cookie} testId={`free-cookie-copy-${index}`} />
-                </div>
-              </div>
-            </CollapsibleContent>
+        {/* Scrollable body */}
+        <div className="overflow-y-auto flex-1">
+          {/* Info */}
+          <div className="px-5 py-4 space-y-3">
+            <InfoRow icon={<Mail className="w-4 h-4" />} label="Email" value={cookie.email} />
+            <InfoRow icon={<CreditCard className="w-4 h-4" />} label="Plan" value={cookie.plan} />
+            <InfoRow icon={<Globe className="w-4 h-4" />} label="Country" value={cookie.country} />
+            <InfoRow icon={<Calendar className="w-4 h-4" />} label="Since" value={cookie.member_since} />
+            <InfoRow icon={<Clock className="w-4 h-4" />} label="Next Bill" value={cookie.next_billing} />
+            {cookie.profiles?.length > 0 && (
+              <InfoRow icon={<Users className="w-4 h-4" />} label="Profiles" value={cookie.profiles.join(', ')} />
+            )}
           </div>
-        </Collapsible>
-      )}
-    </div>
+
+          {/* NFToken */}
+          {currentNftoken && (
+            <div className="px-5 py-4 border-t border-white/5 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Key className="w-4 h-4 text-primary/60" />
+                  <span className="text-xs text-white/40 uppercase tracking-wide">NFToken</span>
+                </div>
+                <button
+                  onClick={handleRefreshToken}
+                  disabled={tokenRefreshing}
+                  data-testid={`refresh-nftoken-${index}`}
+                  className="flex items-center gap-1 text-[10px] text-white/30 hover:text-green-400 transition-colors disabled:opacity-50"
+                >
+                  {tokenRefreshing ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
+                  <span className="uppercase tracking-wide font-mono">Refresh Token</span>
+                </button>
+              </div>
+              <div className="flex items-center gap-2">
+                <code className="flex-1 font-mono text-xs text-primary/80 bg-black/40 px-3 py-2 rounded truncate" data-testid={`free-nftoken-${index}`}>
+                  {currentNftoken}
+                </code>
+                <CopyBtn text={currentNftoken} testId={`free-nftoken-copy-${index}`} />
+              </div>
+
+              {/* Action buttons */}
+              {currentNftokenLink && (
+                <div className="flex flex-col sm:flex-row gap-2 pt-1">
+                  <a
+                    href={currentNftokenLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    data-testid={`free-nftoken-link-${index}`}
+                    className="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-sm text-sm font-bebas tracking-widest uppercase bg-primary/15 text-primary border border-primary/30 hover:bg-primary/25 transition-all"
+                  >
+                    <Link2 className="w-4 h-4" />
+                    Open Netflix with Token
+                  </a>
+                  <a
+                    href={`https://www.netflix.com/unsupported?nftoken=${currentNftoken}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    data-testid={`free-nftoken-unsupported-${index}`}
+                    className="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-sm text-sm font-bebas tracking-widest uppercase bg-blue-500/15 text-blue-400 border border-blue-500/30 hover:bg-blue-500/25 transition-all"
+                  >
+                    <Smartphone className="w-4 h-4" />
+                    Open in Phone
+                  </a>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* TV Sign-In */}
+          {isAlive && (
+            <div className="px-5 py-4 border-t border-white/5">
+              <div className="flex items-center gap-2 mb-3">
+                <Tv className="w-4 h-4 text-blue-400/60" />
+                <span className="text-xs text-white/40 uppercase tracking-wide">Sign In on TV</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Input
+                  value={tvCode}
+                  onChange={e => setTvCode(e.target.value)}
+                  placeholder="Enter TV code (e.g. 12345678)"
+                  className="bg-black/50 border-white/10 focus:border-blue-400 text-white placeholder:text-white/20 h-10 font-mono text-sm"
+                  data-testid={`tv-code-input-${index}`}
+                  disabled={tvLoading}
+                  onKeyDown={e => e.key === 'Enter' && handleTvCode()}
+                />
+                <Button
+                  onClick={handleTvCode}
+                  disabled={tvLoading || !tvCode.trim()}
+                  data-testid={`tv-code-submit-${index}`}
+                  className="bg-blue-500/15 text-blue-400 border border-blue-500/30 hover:bg-blue-500/25 font-bebas tracking-widest uppercase rounded-sm h-10 px-5 shrink-0"
+                >
+                  {tvLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Monitor className="w-4 h-4 mr-1.5" />ACTIVATE</>}
+                </Button>
+              </div>
+              {tvResult && (
+                <div className={`mt-2 text-xs px-3 py-2 rounded ${tvResult.success ? 'bg-green-500/10 text-green-400 border border-green-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'}`} data-testid={`tv-code-result-${index}`}>
+                  {tvResult.message}
+                </div>
+              )}
+              <p className="text-[10px] text-white/15 mt-2">Open Netflix on your TV, select "Sign In" and enter the 8-digit code shown.</p>
+            </div>
+          )}
+
+          {/* Browser Cookies - Admin only */}
+          {isAdmin && cookie.browser_cookies && (
+            <div className="border-t border-white/5">
+              <button
+                onClick={() => setShowBrowserCookies(p => !p)}
+                className="w-full px-5 py-3 flex items-center justify-between text-xs text-green-400/50 hover:text-green-400/80 transition-colors"
+                data-testid={`free-browser-cookies-expand-${index}`}
+              >
+                <span className="font-mono uppercase tracking-wide">
+                  {showBrowserCookies ? 'Hide' : 'View'} Browser Cookies
+                </span>
+                <span className={`transition-transform duration-200 ${showBrowserCookies ? 'rotate-180' : ''}`}>▾</span>
+              </button>
+              {showBrowserCookies && (
+                <div className="relative px-5 pb-4">
+                  <pre className="text-xs font-mono text-green-400/60 bg-black/60 rounded p-4 overflow-x-auto max-h-40 overflow-y-auto whitespace-pre-wrap break-all">
+                    {cookie.browser_cookies}
+                  </pre>
+                  <div className="absolute top-2 right-7">
+                    <CopyBtn text={cookie.browser_cookies} testId={`free-browser-cookies-copy-${index}`} />
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Full Cookie */}
+          {cookie.full_cookie && (
+            <div className="border-t border-white/5">
+              <button
+                onClick={() => setShowCookie(p => !p)}
+                className="w-full px-5 py-3 flex items-center justify-between text-xs text-white/30 hover:text-white/50 transition-colors"
+                data-testid={`free-cookie-expand-${index}`}
+              >
+                <span className="font-mono uppercase tracking-wide">
+                  {showCookie ? 'Hide' : 'View'} Original Cookie
+                </span>
+                <span className={`transition-transform duration-200 ${showCookie ? 'rotate-180' : ''}`}>▾</span>
+              </button>
+              {showCookie && (
+                <div className="relative px-5 pb-4">
+                  <pre className="text-xs font-mono text-white/40 bg-black/60 rounded p-4 overflow-x-auto max-h-40 overflow-y-auto whitespace-pre-wrap break-all">
+                    {cookie.full_cookie}
+                  </pre>
+                  <div className="absolute top-2 right-7">
+                    <CopyBtn text={cookie.full_cookie} testId={`free-cookie-copy-${index}`} />
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </motion.div>
+    </AnimatePresence>
   );
 }
 
@@ -303,16 +359,14 @@ export default function FreeCookiesPage() {
   const [limitInput, setLimitInput] = useState('');
   const [savingLimit, setSavingLimit] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [selectedCookie, setSelectedCookie] = useState(null);
 
   const headers = { Authorization: `Bearer ${token}` };
   const isAdmin = user?.is_master;
 
   useEffect(() => {
-    if (isAdmin) {
-      fetchAdminCookies();
-    } else {
-      fetchUserCookies();
-    }
+    if (isAdmin) fetchAdminCookies();
+    else fetchUserCookies();
   }, [isAdmin]); // eslint-disable-line
 
   const fetchAdminCookies = async () => {
@@ -343,6 +397,7 @@ export default function FreeCookiesPage() {
     try {
       await axios.delete(`${API}/admin/free-cookies/${cookieId}`, { headers });
       setCookies(prev => prev.filter(c => c.id !== cookieId));
+      if (selectedCookie?.id === cookieId) setSelectedCookie(null);
       toast.success('Free cookie removed');
     } catch {
       toast.error('Failed to delete');
@@ -376,6 +431,8 @@ export default function FreeCookiesPage() {
       setRefreshing(false);
     }
   };
+
+  const selectedIndex = selectedCookie ? cookies.findIndex(c => c.id === selectedCookie.id) : -1;
 
   return (
     <div className="min-h-screen bg-[#050505]">
@@ -454,7 +511,7 @@ export default function FreeCookiesPage() {
           </motion.div>
         )}
 
-        {/* Cookies List */}
+        {/* Cookies Grid */}
         {loading ? (
           <div className="text-center py-20">
             <Loader2 className="w-8 h-8 text-primary animate-spin mx-auto" />
@@ -463,35 +520,34 @@ export default function FreeCookiesPage() {
           <div className="text-center py-20 text-white/30">
             <Gift className="w-12 h-12 mx-auto mb-3 text-white/10" />
             <p>No free cookies available</p>
-            {!isAdmin && (
-              <p className="text-xs text-white/15 mt-1">Check back later — the admin will add some!</p>
-            )}
-            {isAdmin && (
-              <p className="text-xs text-white/15 mt-1">Check cookies on the Dashboard, then add valid ones here.</p>
-            )}
+            {!isAdmin && <p className="text-xs text-white/15 mt-1">Check back later — the admin will add some!</p>}
+            {isAdmin && <p className="text-xs text-white/15 mt-1">Check cookies on the Dashboard, then add valid ones here.</p>}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            <AnimatePresence>
-              {cookies.map((cookie, idx) => (
-                <motion.div
-                  key={cookie.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: idx * 0.05 }}
-                >
-                  <FreeCookieCard
-                    cookie={cookie}
-                    index={idx}
-                    isAdmin={isAdmin}
-                    onDelete={deleteCookie}
-                  />
-                </motion.div>
-              ))}
-            </AnimatePresence>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+            {cookies.map((cookie, idx) => (
+              <FreeCookieSmallCard
+                key={cookie.id}
+                cookie={cookie}
+                index={idx}
+                isAdmin={isAdmin}
+                onDelete={deleteCookie}
+                onClick={() => setSelectedCookie(cookie)}
+              />
+            ))}
           </div>
         )}
       </div>
+
+      {/* Modal */}
+      {selectedCookie && (
+        <FreeCookieModal
+          cookie={selectedCookie}
+          index={selectedIndex}
+          isAdmin={isAdmin}
+          onClose={() => setSelectedCookie(null)}
+        />
+      )}
     </div>
   );
 }
