@@ -59,7 +59,7 @@ function FreeCookieSmallCard({ cookie, index, isAdmin, onDelete, onClick }) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.04 }}
       onClick={onClick}
-      className={`cursor-pointer rounded-xl p-4 transition-all duration-150
+      className={`group cursor-pointer rounded-xl p-4 transition-all duration-150
         bg-gradient-to-b from-white/10 to-white/[0.03]
         border border-white/20
         shadow-[inset_0_1px_0_rgba(255,255,255,0.15),inset_0_-1px_0_rgba(0,0,0,0.4),0_8px_24px_rgba(0,0,0,0.6)]
@@ -97,7 +97,8 @@ function FreeCookieSmallCard({ cookie, index, isAdmin, onDelete, onClick }) {
         <span className="text-white/40 text-xs">{cookie.plan || '—'}</span>
       </div>
 
-      <div className="mt-3 pt-2 border-t border-white/5 text-[10px] text-white/15 font-mono text-center tracking-widest">
+      <div className="mt-3 pt-2 border-t border-white/5 text-[10px] font-mono text-center tracking-widest
+        text-white/15 group-hover:text-green-400 transition-colors duration-200">
         TAP TO USE
       </div>
     </motion.div>
