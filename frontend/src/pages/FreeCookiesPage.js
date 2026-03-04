@@ -92,9 +92,14 @@ function FreeCookieSmallCard({ cookie, index, isAdmin, onDelete, onClick }) {
         <span className="text-white/70 text-xs font-mono truncate">{cookie.email || '—'}</span>
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 mb-1.5">
         <CreditCard className="w-3.5 h-3.5 text-white/20 shrink-0" />
         <span className="text-white/40 text-xs">{cookie.plan || '—'}</span>
+      </div>
+
+      <div className="flex items-center gap-2">
+        <Globe className="w-3.5 h-3.5 text-white/20 shrink-0" />
+        <span className="text-white/40 text-xs">{cookie.country || '—'}</span>
       </div>
 
       <div className="mt-3 pt-2 border-t border-white/5 text-[10px] font-mono text-center tracking-widest
@@ -288,7 +293,6 @@ function FreeCookieModal({ cookie, index, isAdmin, onClose }) {
               </div>
             )}
 
-            {/* Admin only — Browser Cookies */}
             {isAdmin && cookie.browser_cookies && (
               <div className="border-t border-white/5">
                 <button
@@ -314,7 +318,6 @@ function FreeCookieModal({ cookie, index, isAdmin, onClose }) {
               </div>
             )}
 
-            {/* Admin only — Original Cookie */}
             {isAdmin && cookie.full_cookie && (
               <div className="border-t border-white/5">
                 <button
