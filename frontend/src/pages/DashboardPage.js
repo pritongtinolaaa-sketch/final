@@ -219,7 +219,6 @@ export default function DashboardPage() {
               border border-white/20
               shadow-[inset_0_1px_0_rgba(255,255,255,0.15),inset_0_-1px_0_rgba(0,0,0,0.4),0_8px_24px_rgba(0,0,0,0.6)]">
               <div className="flex flex-col items-center mb-2 gap-1">
-                {/* Only this is bigger */}
                 <span className="font-bebas tracking-widest text-primary text-2xl">📌 ADMIN NOTICE</span>
                 {user?.is_master && (
                   isEditing ? (
@@ -332,44 +331,60 @@ export default function DashboardPage() {
                   onDragOver={handleDrag}
                   onDrop={handleDrop}
                   className={`border-2 border-dashed rounded-2xl text-center transition-all ${
-                    selectedFiles.length > 0 ? 'p-6' : 'p-8 sm:p-12'
+                    selectedFiles.length > 0 ? 'p-4' : 'p-8 sm:p-12'
                   } ${
                     dragActive
                       ? 'border-primary bg-primary/5 shadow-[0_0_30px_rgba(229,9,20,0.2)]'
                       : 'border-white/15 hover:border-white/25'
                   }`}
                 >
-                  <Upload className={`w-10 h-10 sm:w-12 sm:h-12 mx-auto mb-4 ${dragActive ? 'text-primary' : 'text-white/20'}`} />
                   {selectedFiles.length > 0 ? (
-                    <div>
-                      <p className="text-white font-medium" data-testid="selected-filename">
-                        {selectedFiles.length} file{selectedFiles.length > 1 ? 's' : ''} selected
-                      </p>
-                      <div className="mt-2 space-y-1">
+                    <div className="w-full">
+                      <div className="flex items-center justify-between mb-3 px-1">
+                        <p className="text-white/70 text-sm font-mono" data-testid="selected-filename">
+                          {selectedFiles.length} file{selectedFiles.length > 1 ? 's' : ''} selected
+                        </p>
+                        <button
+                          onClick={() => setSelectedFiles([])}
+                          className="text-primary text-xs hover:underline font-mono"
+                          data-testid="remove-all-files-btn"
+                        >
+                          Remove all
+                        </button>
+                      </div>
+                      <div className="space-y-2">
                         {selectedFiles.map((f, i) => (
-                          <div key={i} className="flex items-center justify-center gap-2 text-sm text-white/50">
-                            <span className="font-mono truncate max-w-[160px] sm:max-w-[200px]">{f.name}</span>
-                            <span className="text-white/20">({(f.size / 1024).toFixed(1)} KB)</span>
-                            <button
-                              onClick={() => setSelectedFiles(prev => prev.filter((_, idx) => idx !== i))}
-                              className="text-red-400 hover:text-red-300 text-xs"
-                              data-testid={`remove-file-${i}`}
-                            >
-                              x
-                            </button>
-                          </div>
+                          <motion.div
+                            key={i}
+                            initial={{ opacity: 0, x: -10 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: i * 0.04 }}
+                            className="flex items-center justify-between gap-3 w-full px-4 py-2.5 rounded-xl
+                              bg-gradient-to-b from-white/10 to-white/[0.03]
+                              border border-white/20
+                              shadow-[inset_0_1px_0_rgba(255,255,255,0.15),inset_0_-1px_0_rgba(0,0,0,0.4)]"
+                          >
+                            <div className="flex items-center gap-2 min-w-0">
+                              <span className="text-white/20 font-mono text-xs shrink-0">#{i + 1}</span>
+                              <span className="font-mono text-sm text-white/70 truncate">{f.name}</span>
+                            </div>
+                            <div className="flex items-center gap-3 shrink-0">
+                              <span className="text-white/20 text-xs font-mono">{(f.size / 1024).toFixed(1)} KB</span>
+                              <button
+                                onClick={() => setSelectedFiles(prev => prev.filter((_, idx) => idx !== i))}
+                                className="text-red-400/50 hover:text-red-400 transition-colors text-xs"
+                                data-testid={`remove-file-${i}`}
+                              >
+                                ✕
+                              </button>
+                            </div>
+                          </motion.div>
                         ))}
                       </div>
-                      <button
-                        onClick={() => setSelectedFiles([])}
-                        className="text-primary text-sm mt-3 hover:underline"
-                        data-testid="remove-all-files-btn"
-                      >
-                        Remove all files
-                      </button>
                     </div>
                   ) : (
                     <div>
+                      <Upload className={`w-10 h-10 sm:w-12 sm:h-12 mx-auto mb-4 ${dragActive ? 'text-primary' : 'text-white/20'}`} />
                       <p className="text-white/40 mb-1 text-sm sm:text-base">Drag & drop your cookie files here</p>
                       <p className="text-white/20 text-xs sm:text-sm mb-4">Supports .txt and .json files — select multiple at once</p>
                       <input
@@ -392,6 +407,28 @@ export default function DashboardPage() {
                     </div>
                   )}
                 </div>
+
+                {/* Add more files button when files already selected */}
+                {selectedFiles.length > 0 && (
+                  <div className="flex items-center gap-2 mt-2">
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept=".txt,.json"
+                      multiple
+                      onChange={handleFileSelect}
+                      className="hidden"
+                      data-testid="file-input"
+                    />
+                    <button
+                      onClick={() => fileInputRef.current?.click()}
+                      className="text-white/30 hover:text-white/60 text-xs font-mono transition-colors"
+                    >
+                      + Add more files
+                    </button>
+                  </div>
+                )}
+
                 <div className="flex justify-end mt-4">
                   <Button
                     onClick={handleCheckFile}
