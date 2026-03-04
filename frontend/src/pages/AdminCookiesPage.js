@@ -445,7 +445,7 @@ export default function AdminCookiesPage() {
           </div>
           <p className="text-xs text-white/20 mb-4">
             Private cookies only visible to admins. Add cookies by checking them on the Dashboard and clicking "Add to Admin Cookies".
-            A <span className="text-green-400 font-mono">IN FREE</span> badge means the cookie also exists in the Free Cookies page.
+            An <span className="text-green-400 font-mono">IN FREE</span> badge means the cookie also exists in the Free Cookies page.
           </p>
           <div className="flex items-center gap-4">
             <Button
