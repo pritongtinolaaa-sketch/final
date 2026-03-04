@@ -59,7 +59,11 @@ function FreeCookieSmallCard({ cookie, index, isAdmin, onDelete, onClick }) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.04 }}
       onClick={onClick}
-      className="cursor-pointer bg-black/60 backdrop-blur-md border border-white/10 rounded-md p-4 hover:border-green-500/30 hover:bg-black/80 transition-all active:scale-[0.98]"
+      className={`cursor-pointer bg-black/60 backdrop-blur-md border border-white/10 rounded-md p-4 transition-all duration-150
+        shadow-[0_6px_0_rgba(255,255,255,0.06)]
+        hover:border-green-500/30 hover:bg-black/80
+        hover:-translate-y-1 hover:shadow-[0_8px_0_rgba(255,255,255,0.08)]
+        active:translate-y-1 active:shadow-[0_2px_0_rgba(255,255,255,0.04)]`}
     >
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
@@ -149,9 +153,7 @@ function FreeCookieModal({ cookie, index, isAdmin, onClose }) {
 
   return (
     <AnimatePresence>
-      {/* Full-screen flex wrapper — guarantees true centering */}
       <div className="fixed inset-0 z-40 flex items-center justify-center pt-16">
-        {/* Backdrop */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -159,8 +161,6 @@ function FreeCookieModal({ cookie, index, isAdmin, onClose }) {
           onClick={onClose}
           className="absolute inset-0 bg-black/75 backdrop-blur-sm"
         />
-
-        {/* Modal */}
         <motion.div
           initial={{ opacity: 0, scale: 0.95, y: 24 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -168,7 +168,6 @@ function FreeCookieModal({ cookie, index, isAdmin, onClose }) {
           transition={{ type: 'spring', stiffness: 300, damping: 25 }}
           className="relative w-[calc(100vw-2rem)] sm:w-[500px] max-h-[85vh] bg-[#0a0a0a] border border-white/10 rounded-md z-10 flex flex-col overflow-hidden"
         >
-          {/* Modal Header */}
           <div className="px-5 py-4 border-b border-white/5 flex items-center justify-between shrink-0">
             <div className="flex items-center gap-3">
               <div className={`w-2 h-2 rounded-full ${isAlive ? 'bg-green-400 shadow-[0_0_6px_rgba(74,222,128,0.5)]' : 'bg-red-400'}`} />
@@ -188,9 +187,7 @@ function FreeCookieModal({ cookie, index, isAdmin, onClose }) {
             </button>
           </div>
 
-          {/* Scrollable body */}
           <div className="overflow-y-auto flex-1">
-            {/* Info */}
             <div className="px-5 py-4 space-y-3">
               <InfoRow icon={<Mail className="w-4 h-4" />} label="Email" value={cookie.email} />
               <InfoRow icon={<CreditCard className="w-4 h-4" />} label="Plan" value={cookie.plan} />
@@ -202,7 +199,6 @@ function FreeCookieModal({ cookie, index, isAdmin, onClose }) {
               )}
             </div>
 
-            {/* NFToken */}
             {currentNftoken && (
               <div className="px-5 py-4 border-t border-white/5 space-y-3">
                 <div className="flex items-center justify-between">
@@ -226,7 +222,6 @@ function FreeCookieModal({ cookie, index, isAdmin, onClose }) {
                   </code>
                   <CopyBtn text={currentNftoken} testId={`free-nftoken-copy-${index}`} />
                 </div>
-
                 {currentNftokenLink && (
                   <div className="flex flex-col sm:flex-row gap-2 pt-1">
                     <a
@@ -254,7 +249,6 @@ function FreeCookieModal({ cookie, index, isAdmin, onClose }) {
               </div>
             )}
 
-            {/* TV Sign-In */}
             {isAlive && (
               <div className="px-5 py-4 border-t border-white/5">
                 <div className="flex items-center gap-2 mb-3">
@@ -289,7 +283,6 @@ function FreeCookieModal({ cookie, index, isAdmin, onClose }) {
               </div>
             )}
 
-            {/* Browser Cookies - Admin only */}
             {isAdmin && cookie.browser_cookies && (
               <div className="border-t border-white/5">
                 <button
@@ -315,7 +308,6 @@ function FreeCookieModal({ cookie, index, isAdmin, onClose }) {
               </div>
             )}
 
-            {/* Full Cookie */}
             {cookie.full_cookie && (
               <div className="border-t border-white/5">
                 <button
@@ -449,7 +441,6 @@ export default function FreeCookiesPage() {
           </div>
         </motion.div>
 
-        {/* Admin Controls */}
         {isAdmin && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -507,7 +498,6 @@ export default function FreeCookiesPage() {
           </motion.div>
         )}
 
-        {/* Cookies Grid */}
         {loading ? (
           <div className="text-center py-20">
             <Loader2 className="w-8 h-8 text-primary animate-spin mx-auto" />
@@ -535,7 +525,6 @@ export default function FreeCookiesPage() {
         )}
       </div>
 
-      {/* Modal */}
       {selectedCookie && (
         <FreeCookieModal
           cookie={selectedCookie}
