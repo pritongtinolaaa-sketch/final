@@ -214,13 +214,12 @@ export default function DashboardPage() {
             </div>
 
             {/* Admin Notice Board */}
-            <div className="w-full sm:min-w-[260px] sm:max-w-xs rounded-2xl p-4
+            <div className="w-full sm:min-w-[320px] sm:max-w-sm rounded-2xl p-6
               bg-gradient-to-b from-white/10 to-white/[0.03]
               border border-white/20
               shadow-[inset_0_1px_0_rgba(255,255,255,0.15),inset_0_-1px_0_rgba(0,0,0,0.4),0_8px_24px_rgba(0,0,0,0.6)]">
-              {/* Centered header */}
-              <div className="flex flex-col items-center mb-2 gap-1">
-                <span className="font-bebas tracking-widest text-primary text-sm">📌 ADMIN NOTICE</span>
+              <div className="flex flex-col items-center mb-3 gap-1">
+                <span className="font-bebas tracking-widest text-primary text-base">📌 ADMIN NOTICE</span>
                 {user?.is_master && (
                   isEditing ? (
                     <button onClick={handleSaveNotice} className="text-xs text-green-400 hover:text-green-300 font-mono">
@@ -237,11 +236,11 @@ export default function DashboardPage() {
                 <textarea
                   value={noticeText}
                   onChange={(e) => setNoticeText(e.target.value)}
-                  className="w-full h-24 bg-black/80 border border-white/10 rounded-xl text-xs text-white/70 p-2 resize-none focus:border-primary focus:outline-none font-mono text-center"
+                  className="w-full h-28 bg-black/80 border border-white/10 rounded-xl text-sm text-white/70 p-2 resize-none focus:border-primary focus:outline-none font-mono text-center"
                   placeholder="Type your notice here..."
                 />
               ) : (
-                <p className="text-white/50 text-xs font-mono whitespace-pre-wrap text-center">
+                <p className="text-white/50 text-sm font-mono whitespace-pre-wrap text-center">
                   {noticeText || 'No notice posted.'}
                 </p>
               )}
