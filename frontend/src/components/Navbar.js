@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { LayoutDashboard, History, LogOut, KeyRound, ScrollText, Gift, Menu, X } from 'lucide-react';
+import { LayoutDashboard, LogOut, KeyRound, ScrollText, Gift, Menu, X } from 'lucide-react';
 
 export default function Navbar() {
   const { user, logout } = useAuth();
@@ -30,7 +30,6 @@ export default function Navbar() {
     <nav data-testid="navbar" className="fixed top-0 left-0 right-0 z-50 bg-black/80 backdrop-blur-xl border-b border-white/10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2.5" data-testid="nav-logo" onClick={() => setOpen(false)}>
-          {/* ✅ CHANGED: replaced Shield icon with your logo */}
           <img src="/favicon.ico" alt="Schiro" className="w-9 h-9 object-contain" />
           <span className="font-bebas text-xl tracking-wider text-white">SCHIRO</span>
         </Link>
@@ -39,7 +38,6 @@ export default function Navbar() {
         <div className="hidden md:flex items-center gap-1">
           <NavLink to="/" icon={LayoutDashboard} label="Dashboard" testId="nav-dashboard-link" />
           <NavLink to="/free-cookies" icon={Gift} label="Free Cookies" testId="nav-free-cookies-link" inactiveClass="text-green-400/70 hover:text-green-400" />
-          <NavLink to="/history" icon={History} label="History" testId="nav-history-link" />
           {user?.is_master && (
             <>
               <NavLink to="/admin" icon={KeyRound} label="Keys" testId="nav-admin-link" inactiveClass="text-primary/70 hover:text-primary" />
@@ -69,7 +67,6 @@ export default function Navbar() {
           <div className="px-4 py-3 space-y-1">
             <NavLink to="/" icon={LayoutDashboard} label="Dashboard" testId="nav-dashboard-link-mobile" />
             <NavLink to="/free-cookies" icon={Gift} label="Free Cookies" testId="nav-free-cookies-link-mobile" inactiveClass="text-green-400/70 hover:text-green-400" />
-            <NavLink to="/history" icon={History} label="History" testId="nav-history-link-mobile" />
             {user?.is_master && (
               <>
                 <NavLink to="/admin" icon={KeyRound} label="Keys" testId="nav-admin-link-mobile" inactiveClass="text-primary/70 hover:text-primary" />
