@@ -31,7 +31,7 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2.5" data-testid="nav-logo" onClick={() => setOpen(false)}>
           {/* ✅ CHANGED: replaced Shield icon with your logo */}
-          <img src="/favicon.ico" alt="Schiro" className="w-6 h-6 object-contain" />
+          <img src="/favicon.ico" alt="Schiro" className="w-9 h-9 object-contain" />
           <span className="font-bebas text-xl tracking-wider text-white">SCHIRO</span>
         </Link>
 
