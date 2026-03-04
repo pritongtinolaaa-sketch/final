@@ -218,7 +218,8 @@ export default function DashboardPage() {
               bg-gradient-to-b from-white/10 to-white/[0.03]
               border border-white/20
               shadow-[inset_0_1px_0_rgba(255,255,255,0.15),inset_0_-1px_0_rgba(0,0,0,0.4),0_8px_24px_rgba(0,0,0,0.6)]">
-              <div className="flex items-center justify-between mb-2">
+              {/* Centered header */}
+              <div className="flex flex-col items-center mb-2 gap-1">
                 <span className="font-bebas tracking-widest text-primary text-sm">📌 ADMIN NOTICE</span>
                 {user?.is_master && (
                   isEditing ? (
@@ -236,11 +237,11 @@ export default function DashboardPage() {
                 <textarea
                   value={noticeText}
                   onChange={(e) => setNoticeText(e.target.value)}
-                  className="w-full h-24 bg-black/80 border border-white/10 rounded-xl text-xs text-white/70 p-2 resize-none focus:border-primary focus:outline-none font-mono"
+                  className="w-full h-24 bg-black/80 border border-white/10 rounded-xl text-xs text-white/70 p-2 resize-none focus:border-primary focus:outline-none font-mono text-center"
                   placeholder="Type your notice here..."
                 />
               ) : (
-                <p className="text-white/50 text-xs font-mono whitespace-pre-wrap">
+                <p className="text-white/50 text-xs font-mono whitespace-pre-wrap text-center">
                   {noticeText || 'No notice posted.'}
                 </p>
               )}
@@ -464,7 +465,6 @@ export default function DashboardPage() {
                 transition={{ duration: 0.5 }}
                 className="mt-10"
               >
-                {/* Results Summary Bar */}
                 <div
                   className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6 pb-6 border-b border-white/5"
                   data-testid="results-summary"
