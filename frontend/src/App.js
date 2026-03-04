@@ -4,6 +4,7 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { Toaster } from "@/components/ui/sonner";
 import AuthPage from "@/pages/AuthPage";
 import DashboardPage from "@/pages/DashboardPage";
+import AdminCookiesPage from "@/pages/AdminCookiesPage";
 import AdminPage from "@/pages/AdminPage";
 import AdminLogsPage from "@/pages/AdminLogsPage";
 import FreeCookiesPage from "@/pages/FreeCookiesPage";
@@ -44,6 +45,7 @@ function AppLayout() {
           <Route path="/" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
           <Route path="/admin" element={<ProtectedRoute><AdminPage /></ProtectedRoute>} />
           <Route path="/admin/logs" element={<ProtectedRoute><AdminLogsPage /></ProtectedRoute>} />
+          <Route path="/admin/cookies" element={<ProtectedRoute><AdminCookiesPage /></ProtectedRoute>} />
           <Route path="/free-cookies" element={<ProtectedRoute><FreeCookiesPage /></ProtectedRoute>} />
           <Route path="/auth" element={<AuthRoute><AuthPage /></AuthRoute>} />
           <Route path="*" element={<Navigate to="/" replace />} />
