@@ -548,7 +548,7 @@ export default function FreeCookiesPage() {
 
     useEffect(() => {
       setInputVal(String(page));
-    }, []);
+    }, []); // eslint-disable-line
 
     if (totalPages <= 1) return null;
 
@@ -576,7 +576,6 @@ export default function FreeCookiesPage() {
 
     return (
       <div className="flex items-center justify-center gap-1.5 flex-wrap">
-        {/* Prev */}
         <button
           onClick={() => setPage(p => Math.max(1, p - 1))}
           disabled={page === 1}
@@ -585,37 +584,35 @@ export default function FreeCookiesPage() {
           &lt;
         </button>
 
-        {/* Head pages: 1 2 3 */}
         {headPages.map(p => (
           <button key={p} onClick={() => setPage(p)} className={btnClass(p)}>{p}</button>
         ))}
 
-        {/* Left ellipsis — only show if current page is far from head */}
-        {page > 4 && <span className="text-white/20 text-xs font-mono px-1">...</span>}
+        {totalPages > 6 && (
+          <span className="text-white/20 text-xs font-mono px-1">...</span>
+        )}
 
-        {/* Jump input in the middle — only show if totalPages > 6 */}
         {totalPages > 6 && (
           <input
-            type="number"
-            min={1}
-            max={totalPages}
+            type="text"
+            inputMode="numeric"
+            pattern="[0-9]*"
             value={inputVal}
-            onChange={e => setInputVal(e.target.value)}
+            onChange={e => setInputVal(e.target.value.replace(/\D/g, ''))}
             onKeyDown={handleJump}
             onBlur={() => setInputVal(String(page))}
-            className="w-14 h-8 rounded-lg text-xs font-mono text-center text-green-400 bg-black/50 border border-green-500/30 focus:border-green-500/60 outline-none transition-all"
+            className="w-14 h-8 rounded-lg text-xs font-mono text-center text-green-400 bg-black/50 border border-green-500/30 focus:border-green-500/60 outline-none transition-all appearance-none"
           />
         )}
 
-        {/* Right ellipsis — only show if current page is far from tail */}
-        {page < totalPages - 3 && <span className="text-white/20 text-xs font-mono px-1">...</span>}
+        {totalPages > 6 && (
+          <span className="text-white/20 text-xs font-mono px-1">...</span>
+        )}
 
-        {/* Tail pages: 18 19 20 */}
         {tailPages.map(p => (
           <button key={p} onClick={() => setPage(p)} className={btnClass(p)}>{p}</button>
         ))}
 
-        {/* Next */}
         <button
           onClick={() => setPage(p => Math.min(totalPages, p + 1))}
           disabled={page === totalPages}
@@ -655,7 +652,6 @@ export default function FreeCookiesPage() {
           </div>
         </motion.div>
 
-        {/* Display Settings — MASTER ONLY */}
         {isAdmin && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -728,7 +724,6 @@ export default function FreeCookiesPage() {
           </div>
         ) : (
           <>
-            {/* Filter row + top pagination */}
             <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
               <FilterBar cookies={cookies} filters={filters} setFilters={setFilters} />
               <Pagination />
@@ -760,7 +755,6 @@ export default function FreeCookiesPage() {
               </div>
             )}
 
-            {/* Bottom pagination */}
             <div className="mt-8">
               <Pagination />
             </div>
