@@ -454,8 +454,6 @@ export default function FreeCookiesPage() {
 
   useEffect(() => {
     if (!user) return;
-    // master → hits /admin/free-cookies (gets all cookies + display_limit setting)
-    // premium + free → hits /free-cookies (backend returns 500 for premium, base_limit for free)
     if (isAdmin) fetchAdminCookies();
     else fetchUserCookies();
   }, [user]); // eslint-disable-line
@@ -526,14 +524,21 @@ export default function FreeCookiesPage() {
   };
 
   const filteredCookies = useMemo(() => {
-    return cookies.filter(c => {
+    let list = cookies.filter(c => {
       if (filters.status === 'alive' && c.is_alive === false) return false;
       if (filters.status === 'dead' && c.is_alive !== false) return false;
       if (filters.plan !== 'all' && c.plan !== filters.plan) return false;
       if (filters.country !== 'all' && c.country !== filters.country) return false;
       return true;
     });
-  }, [cookies, filters]);
+
+    // Free tier sees cookies from the bottom (oldest first)
+    if (!isAdmin && !isPremium) {
+      list = [...list].reverse();
+    }
+
+    return list;
+  }, [cookies, filters, isAdmin, isPremium]);
 
   const selectedIndex = selectedCookie ? cookies.findIndex(c => c.id === selectedCookie.id) : -1;
 
@@ -549,7 +554,7 @@ export default function FreeCookiesPage() {
               </h1>
             </div>
             {!isAdmin && !loading && cookies.length > 0 && (
-              <div className="flex flex-col items-end gap-1">
+              <div className="flex flex-col items-center gap-1">
                 <span className="font-bebas text-lg tracking-widest text-green-400">
                   {filteredCookies.length} COOKIES AVAILABLE
                 </span>
