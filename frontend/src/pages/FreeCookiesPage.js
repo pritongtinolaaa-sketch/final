@@ -543,26 +543,40 @@ export default function FreeCookiesPage() {
 
   const selectedIndex = selectedCookie ? cookies.findIndex(c => c.id === selectedCookie.id) : -1;
 
-  const Pagination = () => {
+  function Pagination() {
+    const [inputVal, setInputVal] = useState(String(page));
+
+    useEffect(() => {
+      setInputVal(String(page));
+    }, []);
+
     if (totalPages <= 1) return null;
 
-    const maxVisible = 7;
-    let pages = [];
+    const headPages = [1, 2, 3].filter(p => p <= totalPages);
+    const tailPages = [totalPages - 2, totalPages - 1, totalPages].filter(p => p > 3);
 
-    if (totalPages <= maxVisible) {
-      pages = Array.from({ length: totalPages }, (_, i) => i + 1);
-    } else {
-      if (page <= 4) {
-        pages = [1, 2, 3, 4, 5, '...', totalPages];
-      } else if (page >= totalPages - 3) {
-        pages = [1, '...', totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
-      } else {
-        pages = [1, '...', page - 1, page, page + 1, '...', totalPages];
+    const handleJump = (e) => {
+      if (e.key === 'Enter') {
+        const val = parseInt(inputVal);
+        if (val >= 1 && val <= totalPages) {
+          setPage(val);
+        } else {
+          setInputVal(String(page));
+          toast.error(`Enter a page between 1 and ${totalPages}`);
+        }
       }
-    }
+    };
+
+    const btnClass = (p) =>
+      `px-3 h-8 rounded-lg text-xs font-mono border transition-all ${
+        page === p
+          ? 'bg-green-500/20 text-green-400 border-green-500/40'
+          : 'text-white/30 border-white/10 hover:border-white/20 hover:text-white/60'
+      }`;
 
     return (
-      <div className="flex items-center justify-center gap-1.5">
+      <div className="flex items-center justify-center gap-1.5 flex-wrap">
+        {/* Prev */}
         <button
           onClick={() => setPage(p => Math.max(1, p - 1))}
           disabled={page === 1}
@@ -570,23 +584,38 @@ export default function FreeCookiesPage() {
         >
           &lt;
         </button>
-        {pages.map((p, i) =>
-          p === '...' ? (
-            <span key={`ellipsis-${i}`} className="px-2 text-white/20 text-xs font-mono">...</span>
-          ) : (
-            <button
-              key={p}
-              onClick={() => setPage(p)}
-              className={`px-3 h-8 rounded-lg text-xs font-mono border transition-all ${
-                page === p
-                  ? 'bg-green-500/20 text-green-400 border-green-500/40'
-                  : 'text-white/30 border-white/10 hover:border-white/20 hover:text-white/60'
-              }`}
-            >
-              {p}
-            </button>
-          )
+
+        {/* Head pages: 1 2 3 */}
+        {headPages.map(p => (
+          <button key={p} onClick={() => setPage(p)} className={btnClass(p)}>{p}</button>
+        ))}
+
+        {/* Left ellipsis — only show if current page is far from head */}
+        {page > 4 && <span className="text-white/20 text-xs font-mono px-1">...</span>}
+
+        {/* Jump input in the middle — only show if totalPages > 6 */}
+        {totalPages > 6 && (
+          <input
+            type="number"
+            min={1}
+            max={totalPages}
+            value={inputVal}
+            onChange={e => setInputVal(e.target.value)}
+            onKeyDown={handleJump}
+            onBlur={() => setInputVal(String(page))}
+            className="w-14 h-8 rounded-lg text-xs font-mono text-center text-green-400 bg-black/50 border border-green-500/30 focus:border-green-500/60 outline-none transition-all"
+          />
         )}
+
+        {/* Right ellipsis — only show if current page is far from tail */}
+        {page < totalPages - 3 && <span className="text-white/20 text-xs font-mono px-1">...</span>}
+
+        {/* Tail pages: 18 19 20 */}
+        {tailPages.map(p => (
+          <button key={p} onClick={() => setPage(p)} className={btnClass(p)}>{p}</button>
+        ))}
+
+        {/* Next */}
         <button
           onClick={() => setPage(p => Math.min(totalPages, p + 1))}
           disabled={page === totalPages}
@@ -596,7 +625,7 @@ export default function FreeCookiesPage() {
         </button>
       </div>
     );
-  };
+  }
 
   return (
     <div className="min-h-screen bg-[#050505]">
