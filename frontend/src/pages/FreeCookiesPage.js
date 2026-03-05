@@ -549,9 +549,18 @@ export default function FreeCookiesPage() {
               </h1>
             </div>
             {!isAdmin && !loading && cookies.length > 0 && (
-              <span className="font-bebas text-lg tracking-widest text-green-400">
-                {filteredCookies.length} COOKIES AVAILABLE
-              </span>
+              <div className="flex flex-col items-end gap-1">
+                <span className="font-bebas text-lg tracking-widest text-green-400">
+                  {filteredCookies.length} COOKIES AVAILABLE
+                </span>
+                {!isPremium && (
+                  <span className="text-[10px] font-mono text-white/25 tracking-wide">
+                    Upgrade to{' '}
+                    <span className="text-purple-400 font-semibold">PREMIUM</span>
+                    {' '}tier to see all cookies
+                  </span>
+                )}
+              </div>
             )}
           </div>
         </motion.div>
