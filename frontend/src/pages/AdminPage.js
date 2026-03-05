@@ -159,6 +159,21 @@ export default function AdminPage() {
     return { label: `${diffDays}d left`, color: 'text-green-400 border-green-500/30 bg-green-500/10' };
   };
 
+  // Convert stored UTC expiry to PH time for datetime-local input
+  const toPhDatetimeLocal = (expiresAt) => {
+    if (!expiresAt) return '';
+    const phString = new Date(expiresAt).toLocaleString('en-US', { timeZone: 'Asia/Manila' });
+    const phDate = new Date(phString);
+    const pad = n => String(n).padStart(2, '0');
+    return `${phDate.getFullYear()}-${pad(phDate.getMonth() + 1)}-${pad(phDate.getDate())}T${pad(phDate.getHours())}:${pad(phDate.getMinutes())}`;
+  };
+
+  // Convert PH datetime-local input back to UTC ISO string
+  const phLocalToUtc = (val) => {
+    if (!val) return '';
+    return new Date(val + '+08:00').toISOString();
+  };
+
   if (!isMaster) return null;
 
   return (
@@ -240,7 +255,6 @@ export default function AdminPage() {
                 data-testid="create-key-devices"
               />
             </div>
-            {/* Tier selector */}
             <div className="w-36">
               <label className="text-xs text-white/40 uppercase tracking-wide mb-1.5 block">Tier</label>
               <select
@@ -293,7 +307,6 @@ export default function AdminPage() {
                     <div>
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="text-white font-medium">{keyItem.label}</span>
-                        {/* Tier badge */}
                         <Badge className={`border text-xs capitalize ${TIER_STYLES[tier]}`}>
                           {tier === 'master' && <Shield className="w-3 h-3 mr-1" />}
                           {tier}
@@ -314,25 +327,35 @@ export default function AdminPage() {
                         {keyItem.expires_at && (
                           <span className="flex items-center gap-1 text-white/20 text-xs">
                             <Calendar className="w-3 h-3" />
-                            Expires {new Date(keyItem.expires_at).toLocaleDateString()}
+                            Expires {new Date(keyItem.expires_at).toLocaleString('en-PH', {
+                              timeZone: 'Asia/Manila',
+                              year: 'numeric',
+                              month: 'short',
+                              day: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit',
+                              hour12: true
+                            })} PHT
                           </span>
                         )}
                       </div>
 
                       {/* Inline expiry editor — hidden for master key */}
                       {editingExpiry[keyItem.id] && !keyItem.is_master && (
-                        <div className="flex items-center gap-2 mt-3">
+                        <div className="flex items-center gap-2 mt-3 flex-wrap">
                           <Input
-                            type="date"
-                            defaultValue={keyItem.expires_at?.slice(0, 10) || ''}
+                            type="datetime-local"
+                            defaultValue={toPhDatetimeLocal(keyItem.expires_at)}
                             id={`expiry-input-${keyItem.id}`}
-                            className="bg-black/50 border-white/10 focus:border-primary text-white h-8 w-44 text-xs [color-scheme:dark]"
+                            className="bg-black/50 border-white/10 focus:border-primary text-white h-8 w-52 text-xs [color-scheme:dark]"
                           />
+                          <span className="text-[10px] text-white/20 font-mono">PH Time (UTC+8)</span>
                           <Button
                             size="sm"
                             onClick={() => {
                               const val = document.getElementById(`expiry-input-${keyItem.id}`).value;
-                              updateExpiry(keyItem.id, val);
+                              if (!val) return;
+                              updateExpiry(keyItem.id, phLocalToUtc(val));
                             }}
                             className="h-8 bg-primary/20 hover:bg-primary/40 text-primary text-xs px-3"
                           >
@@ -410,7 +433,6 @@ export default function AdminPage() {
                         </Button>
                       )}
 
-                      {/* Expiry edit button — hidden for master */}
                       {!keyItem.is_master && (
                         <Button
                           size="sm"
@@ -424,7 +446,6 @@ export default function AdminPage() {
                         </Button>
                       )}
 
-                      {/* Tier edit button — hidden for master */}
                       {!keyItem.is_master && (
                         <Button
                           size="sm"
@@ -480,7 +501,16 @@ export default function AdminPage() {
                                   <div className="flex items-center gap-3">
                                     <div className="w-2 h-2 rounded-full bg-green-400" />
                                     <span className="font-mono text-xs text-white/40">{session.session_id.slice(0, 8)}...</span>
-                                    <span className="text-xs text-white/20">{new Date(session.created_at).toLocaleDateString()}</span>
+                                    <span className="text-xs text-white/20">
+                                      {new Date(session.created_at).toLocaleString('en-PH', {
+                                        timeZone: 'Asia/Manila',
+                                        month: 'short',
+                                        day: 'numeric',
+                                        hour: '2-digit',
+                                        minute: '2-digit',
+                                        hour12: true
+                                      })} PHT
+                                    </span>
                                   </div>
                                   <Button
                                     size="sm"
