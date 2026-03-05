@@ -48,8 +48,13 @@ export function AuthProvider({ children }) {
     setUser(null);
   };
 
+  // Helper tier booleans
+  const isMaster = user?.is_master === true;
+  const isPremium = user?.tier === 'premium' && !isMaster;
+  const isFree = user?.tier === 'free' && !isMaster;
+
   return (
-    <AuthContext.Provider value={{ user, token, loading, login, logout }}>
+    <AuthContext.Provider value={{ user, token, loading, login, logout, isMaster, isPremium, isFree }}>
       {children}
     </AuthContext.Provider>
   );
