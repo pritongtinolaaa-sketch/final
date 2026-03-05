@@ -75,7 +75,7 @@ function FilterBar({ cookies, filters, setFilters }) {
   const selectClass = "bg-black/50 border border-white/10 text-white/60 text-xs rounded-lg px-3 h-8 outline-none focus:border-green-500/40 cursor-pointer hover:border-white/20 transition-colors";
 
   return (
-    <div className="flex flex-wrap items-center gap-2 mb-6">
+    <div className="flex flex-wrap items-center gap-2">
       <div className="flex items-center gap-1.5 text-white/20 mr-1">
         <Filter className="w-3.5 h-3.5" />
         <span className="text-xs font-mono uppercase tracking-wide">Filter</span>
@@ -446,37 +446,45 @@ export default function FreeCookiesPage() {
   const [refreshing, setRefreshing] = useState(false);
   const [selectedCookie, setSelectedCookie] = useState(null);
   const [filters, setFilters] = useState({ status: 'all', plan: 'all', country: 'all' });
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [total, setTotal] = useState(0);
 
   const headers = { Authorization: `Bearer ${token}` };
-
   const isAdmin = user?.is_master === true;
   const isPremium = user?.tier === 'premium' && !isAdmin;
 
   useEffect(() => {
     if (!user) return;
-    if (isAdmin) fetchAdminCookies();
-    else fetchUserCookies();
-  }, [user]); // eslint-disable-line
+    fetchCookies(page);
+  }, [user, page]); // eslint-disable-line
 
-  const fetchAdminCookies = async () => {
+  useEffect(() => {
+    setPage(1);
+  }, [filters]);
+
+  const fetchCookies = async (currentPage = 1) => {
     setLoading(true);
     try {
-      const res = await axios.get(`${API}/admin/free-cookies`, { headers });
-      setCookies(res.data.cookies);
-      setDisplayLimit(res.data.display_limit);
-      setLimitInput(String(res.data.display_limit));
-    } catch {
-      toast.error('Failed to load free cookies');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchUserCookies = async () => {
-    setLoading(true);
-    try {
-      const res = await axios.get(`${API}/free-cookies`, { headers });
-      setCookies(res.data);
+      if (isAdmin) {
+        const res = await axios.get(`${API}/admin/free-cookies`, {
+          headers,
+          params: { page: currentPage, page_size: 20 }
+        });
+        setCookies(res.data.cookies);
+        setTotalPages(res.data.total_pages);
+        setTotal(res.data.total);
+        setDisplayLimit(res.data.display_limit);
+        setLimitInput(String(res.data.display_limit));
+      } else {
+        const res = await axios.get(`${API}/free-cookies`, {
+          headers,
+          params: { page: currentPage, page_size: 20 }
+        });
+        setCookies(res.data.cookies);
+        setTotalPages(res.data.total_pages);
+        setTotal(res.data.total);
+      }
     } catch {
       toast.error('Failed to load free cookies');
     } finally {
@@ -515,7 +523,7 @@ export default function FreeCookiesPage() {
     try {
       const res = await axios.post(`${API}/admin/free-cookies/refresh`, {}, { headers });
       toast.success(res.data.message);
-      fetchAdminCookies();
+      fetchCookies(page);
     } catch {
       toast.error('Failed to refresh tokens');
     } finally {
@@ -535,6 +543,61 @@ export default function FreeCookiesPage() {
 
   const selectedIndex = selectedCookie ? cookies.findIndex(c => c.id === selectedCookie.id) : -1;
 
+  const Pagination = () => {
+    if (totalPages <= 1) return null;
+
+    const maxVisible = 7;
+    let pages = [];
+
+    if (totalPages <= maxVisible) {
+      pages = Array.from({ length: totalPages }, (_, i) => i + 1);
+    } else {
+      if (page <= 4) {
+        pages = [1, 2, 3, 4, 5, '...', totalPages];
+      } else if (page >= totalPages - 3) {
+        pages = [1, '...', totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
+      } else {
+        pages = [1, '...', page - 1, page, page + 1, '...', totalPages];
+      }
+    }
+
+    return (
+      <div className="flex items-center justify-center gap-1.5">
+        <button
+          onClick={() => setPage(p => Math.max(1, p - 1))}
+          disabled={page === 1}
+          className="px-3 h-8 rounded-lg text-xs font-mono text-white/30 border border-white/10 hover:border-white/20 hover:text-white/60 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+        >
+          &lt;
+        </button>
+        {pages.map((p, i) =>
+          p === '...' ? (
+            <span key={`ellipsis-${i}`} className="px-2 text-white/20 text-xs font-mono">...</span>
+          ) : (
+            <button
+              key={p}
+              onClick={() => setPage(p)}
+              className={`px-3 h-8 rounded-lg text-xs font-mono border transition-all ${
+                page === p
+                  ? 'bg-green-500/20 text-green-400 border-green-500/40'
+                  : 'text-white/30 border-white/10 hover:border-white/20 hover:text-white/60'
+              }`}
+            >
+              {p}
+            </button>
+          )
+        )}
+        <button
+          onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+          disabled={page === totalPages}
+          className="px-3 h-8 rounded-lg text-xs font-mono text-white/30 border border-white/10 hover:border-white/20 hover:text-white/60 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+        >
+          &gt;
+        </button>
+      </div>
+    );
+  };
+
   return (
     <div className="min-h-screen bg-[#050505]">
       <div className="max-w-5xl mx-auto px-6 py-6 md:py-10">
@@ -546,12 +609,12 @@ export default function FreeCookiesPage() {
                 FREE <span className="text-green-400">COOKIES</span>
               </h1>
             </div>
-            {!isAdmin && !loading && cookies.length > 0 && (
+            {!loading && total > 0 && (
               <div className="flex flex-col items-center gap-1">
                 <span className="font-bebas text-lg tracking-widest text-green-400">
-                  {filteredCookies.length} COOKIES AVAILABLE
+                  {total} COOKIES AVAILABLE
                 </span>
-                {!isPremium && (
+                {!isPremium && !isAdmin && (
                   <span className="text-[10px] font-mono text-white/25 tracking-wide">
                     Upgrade to{' '}
                     <span className="text-purple-400 font-semibold">PREMIUM</span>
@@ -601,7 +664,7 @@ export default function FreeCookiesPage() {
               </Button>
               <div className="ml-auto">
                 <Badge className="bg-white/5 text-white/40 border border-white/10 text-xs">
-                  {cookies.length} total / {displayLimit} shown to free tier
+                  {total} total / {displayLimit} shown to free tier
                 </Badge>
               </div>
             </div>
@@ -611,7 +674,7 @@ export default function FreeCookiesPage() {
             <div className="mt-4 pt-4 border-t border-white/5 flex items-center gap-4">
               <Button
                 onClick={refreshTokens}
-                disabled={refreshing || cookies.length === 0}
+                disabled={refreshing || total === 0}
                 data-testid="refresh-tokens-btn"
                 className="bg-green-500/10 text-green-400 border border-green-500/20 hover:bg-green-500/20 font-bebas tracking-widest uppercase rounded-xl h-10 px-6"
               >
@@ -627,7 +690,7 @@ export default function FreeCookiesPage() {
           <div className="text-center py-20">
             <Loader2 className="w-8 h-8 text-primary animate-spin mx-auto" />
           </div>
-        ) : cookies.length === 0 ? (
+        ) : total === 0 ? (
           <div className="text-center py-20 text-white/30">
             <Gift className="w-12 h-12 mx-auto mb-3 text-white/10" />
             <p>No free cookies available</p>
@@ -636,7 +699,12 @@ export default function FreeCookiesPage() {
           </div>
         ) : (
           <>
-            <FilterBar cookies={cookies} filters={filters} setFilters={setFilters} />
+            {/* Filter row + top pagination */}
+            <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
+              <FilterBar cookies={cookies} filters={filters} setFilters={setFilters} />
+              <Pagination />
+            </div>
+
             {filteredCookies.length === 0 ? (
               <div className="text-center py-16 text-white/30">
                 <Filter className="w-10 h-10 mx-auto mb-3 text-white/10" />
@@ -662,6 +730,11 @@ export default function FreeCookiesPage() {
                 ))}
               </div>
             )}
+
+            {/* Bottom pagination */}
+            <div className="mt-8">
+              <Pagination />
+            </div>
           </>
         )}
       </div>
