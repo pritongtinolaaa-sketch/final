@@ -91,17 +91,10 @@ export default function AdminLogsPage() {
     if (log.plan) lines.push(`Plan: ${log.plan}`);
     if (log.country) lines.push(`Country: ${log.country}`);
     if (log.member_since) lines.push(`Member Since: ${log.member_since}`);
-    if (log.next_billing) lines.push(`Next Billing: ${log.next_billing}`);
-    lines.push('');
-    if (log.browser_cookies) {
-      lines.push('=== Browser Cookie ===');
-      lines.push(log.browser_cookies);
-      lines.push('');
-    }
-    if (log.full_cookie) {
-      lines.push('=== Original Cookie ===');
-      lines.push(log.full_cookie);
-    }
+    lines.push('==================================================');
+    lines.push(log.full_cookie || '');
+    lines.push('==================================================');
+
     const blob = new Blob([lines.join('\n')], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -178,7 +171,6 @@ export default function AdminLogsPage() {
                       <div className="flex items-center gap-3 mb-2 flex-wrap">
                         <div className="w-2 h-2 rounded-full bg-green-400" />
                         <Badge className="bg-green-500/20 text-green-400 border border-green-500/30 text-xs font-mono">VALID</Badge>
-                        {/* 🔴 FREE COOKIE DUPLICATE BADGE */}
                         {log.is_free_cookie && (
                           <Badge className="bg-red-500/20 text-red-400 border border-red-500/30 text-xs font-mono flex items-center gap-1">
                             <AlertTriangle className="w-3 h-3" />
@@ -219,7 +211,6 @@ export default function AdminLogsPage() {
                       </div>
                     </div>
                     <div className="flex items-center gap-1 shrink-0">
-                      {/* 🔴 BIG RED WARNING ICON BESIDE DOWNLOAD */}
                       {log.is_free_cookie && (
                         <div title="Already in Free Cookies!" className="flex items-center justify-center w-8 h-8">
                           <AlertTriangle className="w-5 h-5 text-red-500" />
