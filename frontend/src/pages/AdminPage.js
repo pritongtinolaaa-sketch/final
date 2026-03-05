@@ -5,34 +5,40 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Key, Plus, Trash2, Eye, EyeOff, Users, Monitor, Copy, X, Loader2, KeyRound, Calendar, Clock } from 'lucide-react';
+import { Key, Plus, Trash2, Eye, EyeOff, Users, Monitor, Copy, X, Loader2, KeyRound, Calendar, Clock, Shield } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
+const TIER_OPTIONS = ['free', 'premium'];
+
+const TIER_STYLES = {
+  master: 'bg-primary/20 text-primary border-primary/30',
+  premium: 'bg-purple-500/20 text-purple-400 border-purple-500/30',
+  free: 'bg-white/10 text-white/50 border-white/20',
+};
+
 export default function AdminPage() {
-  const { user, token } = useAuth();
+  const { user, token, isMaster } = useAuth();
   const navigate = useNavigate();
   const [keys, setKeys] = useState([]);
   const [loading, setLoading] = useState(true);
   const [newLabel, setNewLabel] = useState('');
   const [newMaxDevices, setNewMaxDevices] = useState(1);
   const [customKey, setCustomKey] = useState('');
-  const [newExpiresAt, setNewExpiresAt] = useState('');
+  const [newTier, setNewTier] = useState('free');
   const [creating, setCreating] = useState(false);
   const [revealedKeys, setRevealedKeys] = useState({});
   const [newKeyValue, setNewKeyValue] = useState(null);
   const [expandedSessions, setExpandedSessions] = useState(null);
   const [editingExpiry, setEditingExpiry] = useState({});
+  const [editingTier, setEditingTier] = useState({});
 
   const headers = { Authorization: `Bearer ${token}` };
 
   useEffect(() => {
-    if (!user?.is_master) {
-      navigate('/');
-      return;
-    }
+    if (!isMaster) { navigate('/'); return; }
     fetchKeys();
   }, [user, navigate]); // eslint-disable-line
 
@@ -55,13 +61,13 @@ export default function AdminPage() {
         label: newLabel,
         max_devices: newMaxDevices,
         custom_key: customKey.trim() || undefined,
-        expires_at: newExpiresAt || undefined,
+        tier: newTier,
       }, { headers });
       setNewKeyValue(res.data.key_value);
       setNewLabel('');
       setNewMaxDevices(1);
       setCustomKey('');
-      setNewExpiresAt('');
+      setNewTier('free');
       fetchKeys();
       toast.success('Key created');
     } catch (err) {
@@ -111,6 +117,17 @@ export default function AdminPage() {
     }
   };
 
+  const updateTier = async (keyId, tier) => {
+    try {
+      await axios.patch(`${API}/admin/keys/${keyId}`, { tier }, { headers });
+      fetchKeys();
+      setEditingTier(prev => ({ ...prev, [keyId]: false }));
+      toast.success(`Tier updated to ${tier}`);
+    } catch {
+      toast.error('Failed to update tier');
+    }
+  };
+
   const copyText = async (text) => {
     try {
       if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -142,7 +159,7 @@ export default function AdminPage() {
     return { label: `${diffDays}d left`, color: 'text-green-400 border-green-500/30 bg-green-500/10' };
   };
 
-  if (!user?.is_master) return null;
+  if (!isMaster) return null;
 
   return (
     <div className="min-h-screen bg-[#050505]">
@@ -223,15 +240,19 @@ export default function AdminPage() {
                 data-testid="create-key-devices"
               />
             </div>
-            <div className="w-44">
-              <label className="text-xs text-white/40 uppercase tracking-wide mb-1.5 block">Expiry <span className="text-white/20">(optional)</span></label>
-              <Input
-                type="date"
-                value={newExpiresAt}
-                onChange={e => setNewExpiresAt(e.target.value)}
-                className="bg-black/50 border-white/10 focus:border-primary text-white h-11 [color-scheme:dark]"
-                data-testid="create-key-expiry"
-              />
+            {/* Tier selector */}
+            <div className="w-36">
+              <label className="text-xs text-white/40 uppercase tracking-wide mb-1.5 block">Tier</label>
+              <select
+                value={newTier}
+                onChange={e => setNewTier(e.target.value)}
+                className="w-full bg-black/50 border border-white/10 focus:border-primary text-white h-11 rounded-md px-3 text-sm outline-none cursor-pointer"
+                data-testid="create-key-tier"
+              >
+                {TIER_OPTIONS.map(t => (
+                  <option key={t} value={t} className="bg-[#111] capitalize">{t.charAt(0).toUpperCase() + t.slice(1)}</option>
+                ))}
+              </select>
             </div>
             <Button
               onClick={createKey}
@@ -258,6 +279,7 @@ export default function AdminPage() {
           ) : (
             keys.map((keyItem, idx) => {
               const expiryStatus = getExpiryStatus(keyItem.expires_at);
+              const tier = keyItem.is_master ? 'master' : (keyItem.tier || 'free');
               return (
                 <motion.div
                   key={keyItem.id}
@@ -271,9 +293,11 @@ export default function AdminPage() {
                     <div>
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="text-white font-medium">{keyItem.label}</span>
-                        {keyItem.is_master && (
-                          <Badge className="bg-primary/20 text-primary border border-primary/30 text-xs">MASTER</Badge>
-                        )}
+                        {/* Tier badge */}
+                        <Badge className={`border text-xs capitalize ${TIER_STYLES[tier]}`}>
+                          {tier === 'master' && <Shield className="w-3 h-3 mr-1" />}
+                          {tier}
+                        </Badge>
                         {expiryStatus && (
                           <Badge className={`border text-xs font-mono ${expiryStatus.color}`}>
                             <Clock className="w-3 h-3 mr-1" />
@@ -295,8 +319,8 @@ export default function AdminPage() {
                         )}
                       </div>
 
-                      {/* Inline expiry editor */}
-                      {editingExpiry[keyItem.id] && (
+                      {/* Inline expiry editor — hidden for master key */}
+                      {editingExpiry[keyItem.id] && !keyItem.is_master && (
                         <div className="flex items-center gap-2 mt-3">
                           <Input
                             type="date"
@@ -332,6 +356,39 @@ export default function AdminPage() {
                           </Button>
                         </div>
                       )}
+
+                      {/* Inline tier editor — hidden for master key */}
+                      {editingTier[keyItem.id] && !keyItem.is_master && (
+                        <div className="flex items-center gap-2 mt-3">
+                          <select
+                            defaultValue={keyItem.tier || 'free'}
+                            id={`tier-input-${keyItem.id}`}
+                            className="bg-black/50 border border-white/10 focus:border-primary text-white h-8 rounded-md px-3 text-xs outline-none cursor-pointer"
+                          >
+                            {TIER_OPTIONS.map(t => (
+                              <option key={t} value={t} className="bg-[#111] capitalize">{t.charAt(0).toUpperCase() + t.slice(1)}</option>
+                            ))}
+                          </select>
+                          <Button
+                            size="sm"
+                            onClick={() => {
+                              const val = document.getElementById(`tier-input-${keyItem.id}`).value;
+                              updateTier(keyItem.id, val);
+                            }}
+                            className="h-8 bg-purple-500/20 hover:bg-purple-500/40 text-purple-400 text-xs px-3"
+                          >
+                            Save
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => setEditingTier(prev => ({ ...prev, [keyItem.id]: false }))}
+                            className="h-8 text-white/20 hover:text-white px-2"
+                          >
+                            <X className="w-3 h-3" />
+                          </Button>
+                        </div>
+                      )}
                     </div>
 
                     <div className="flex items-center gap-2">
@@ -353,17 +410,33 @@ export default function AdminPage() {
                         </Button>
                       )}
 
-                      {/* Expiry edit button */}
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => setEditingExpiry(prev => ({ ...prev, [keyItem.id]: !prev[keyItem.id] }))}
-                        className="text-white/30 hover:text-yellow-400"
-                        title="Set expiry"
-                        data-testid={`expiry-key-${idx}`}
-                      >
-                        <Calendar className="w-3.5 h-3.5" />
-                      </Button>
+                      {/* Expiry edit button — hidden for master */}
+                      {!keyItem.is_master && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => setEditingExpiry(prev => ({ ...prev, [keyItem.id]: !prev[keyItem.id] }))}
+                          className="text-white/30 hover:text-yellow-400"
+                          title="Set expiry"
+                          data-testid={`expiry-key-${idx}`}
+                        >
+                          <Calendar className="w-3.5 h-3.5" />
+                        </Button>
+                      )}
+
+                      {/* Tier edit button — hidden for master */}
+                      {!keyItem.is_master && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => setEditingTier(prev => ({ ...prev, [keyItem.id]: !prev[keyItem.id] }))}
+                          className="text-white/30 hover:text-purple-400"
+                          title="Change tier"
+                          data-testid={`tier-key-${idx}`}
+                        >
+                          <Shield className="w-3.5 h-3.5" />
+                        </Button>
+                      )}
 
                       <Button
                         size="sm"
@@ -374,6 +447,7 @@ export default function AdminPage() {
                       >
                         <Users className="w-3.5 h-3.5" />
                       </Button>
+
                       {!keyItem.is_master && (
                         <Button
                           size="sm"
