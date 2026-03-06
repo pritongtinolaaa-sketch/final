@@ -827,17 +827,223 @@ export default function FreeCookiesPage() {
           </div>
         )}
 
+        // (imports and helpers stay exactly as in the last full file I sent)
+    // Only the main component body matters for your issue:
+
+export default function FreeCookiesPage() {
+  // ...all the state, effects, helpers, toggleFavorite, etc. exactly as in the last file...
+
+  // keep everything from the previous full file unchanged
+  // down to the return below:
+
+  return (
+    <div className="min-h-screen bg-[#050505]">
+      <div className="max-w-5xl mx-auto px-6 py-6 md:py-10">
+        {/* header */}
+        {/* ...same header and tabs as before... */}
+
+        {isAdmin && (
+          /* admin control card ... unchanged */
+        )}
+
         {activeTab === 'favorites' && canFavorite ? (
           favoritesLoading ? (
             <div className="text-center py-16">
               <Loader2 className="w-8 h-8 text-yellow-400 animate-spin mx-auto" />
             </div>
+          ) : !isAdmin ? (
+            // PREMIUM (non‑master): all favorites in one list
+            favoriteCookiesMaster.length === 0 ? (
+              <div className="text-center py-16 text-white/40">
+                <Star className="w-10 h-10 mx-auto mb-2 text-white/20" />
+                <p>No favorites yet.</p>
+                <p className="text-xs text-white/30 mt-1">
+                  Click the star on any card in All Free to add it here.
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {favoriteCookiesMaster.map((cookie, idx) => (
+                  <FreeCookieSmallCard
+                    key={`${cookie.id}-${cookie.source}-${idx}`}
+                    cookie={cookie}
+                    globalIndex={idx}
+                    isAdmin={isAdmin}
+                    canFavorite={canFavorite}
+                    isFavorited={favoriteIds.has(cookie.id)}
+                    onDelete={handleDeleteCookie}
+                    onClick={() => {
+                      setSelectedCookie(cookie);
+                      setSelectedGlobalIndex(idx);
+                    }}
+                    onToggleFavorite={toggleFavorite}
+                    showSourceBadge
+                  />
+                ))}
+              </div>
+            )
           ) : (
+            // MASTER: split into my favorites and others’ hidden cookies
             <>
-              {/* render favoriteCookiesMaster / favoriteCookiesOthers as in your original */}
+              <h2 className="font-bebas text-lg tracking-wider text-white mb-3">
+                My Favorites
+              </h2>
+              {favoriteCookiesMaster.length === 0 ? (
+                <div className="text-center py-10 text-white/40 border border-dashed border-white/10 rounded-xl mb-6">
+                  <Star className="w-8 h-8 mx-auto mb-2 text-white/20" />
+                  <p>No favorites yet for this master key.</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+                  {favoriteCookiesMaster.map((cookie, idx) => (
+                    <FreeCookieSmallCard
+                      key={`mine-${cookie.id}-${cookie.source}-${idx}`}
+                      cookie={cookie}
+                      globalIndex={idx}
+                      isAdmin={isAdmin}
+                      canFavorite={canFavorite}
+                      isFavorited={favoriteIds.has(cookie.id)}
+                      onDelete={handleDeleteCookie}
+                      onClick={() => {
+                        setSelectedCookie(cookie);
+                        setSelectedGlobalIndex(idx);
+                      }}
+                      onToggleFavorite={toggleFavorite}
+                      isMasterFavoritesView
+                      showSourceBadge
+                    />
+                  ))}
+                </div>
+              )}
+
+              <h2 className="font-bebas text-lg tracking-wider text-white mb-3">
+                Hidden by Other Keys
+              </h2>
+              {favoriteCookiesOthers.length === 0 ? (
+                <div className="text-center py-6 text-white/35 text-xs border border-dashed border-white/10 rounded-xl">
+                  <p>No favorites from other keys.</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {favoriteCookiesOthers.map((cookie, idx) => (
+                    <FreeCookieSmallCard
+                      key={`others-${cookie.id}-${cookie.source}-${idx}`}
+                      cookie={cookie}
+                      globalIndex={idx}
+                      isAdmin={isAdmin}
+                      canFavorite={canFavorite}
+                      isFavorited={favoriteIds.has(cookie.id)}
+                      onDelete={handleDeleteCookie}
+                      onClick={() => {
+                        setSelectedCookie(cookie);
+                        setSelectedGlobalIndex(idx);
+                      }}
+                      onToggleFavorite={toggleFavorite}
+                      isMasterFavoritesView
+                      showSourceBadge
+                    />
+                  ))}
+                </div>
+              )}
             </>
           )
         ) : loading ? (
+          <div className="text-center py-16">
+            <Loader2 className="w-8 h-8 text-green-400 animate-spin mx-auto" />
+          </div>
+        ) : publicCookies.length === 0 ? (
+          <div className="text-center py-16 text-white/40">
+            <Cookie className="w-10 h-10 mx-auto mb-2 text-white/20" />
+            <p>No free cookies available.</p>
+          </div>
+        ) : (
+          <>
+            <FilterBar
+              filters={filters}
+              onApply={handleFilterApply}
+              planOptions={allPlanOptions}
+              countryOptions={allCountryOptions}
+            />
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {visibleList.map((cookie, idx) => (
+                <FreeCookieSmallCard
+                  key={cookie.id}
+                  cookie={cookie}
+                  globalIndex={(page - 1) * pageSize + idx}
+                  isAdmin={isAdmin}
+                  canFavorite={canFavorite}
+                  isFavorited={favoriteIds.has(cookie.id)}
+                  onDelete={handleDeleteCookie}
+                  onClick={() => {
+                    setSelectedCookie(cookie);
+                    setSelectedGlobalIndex(
+                      (page - 1) * pageSize + idx,
+                    );
+                  }}
+                  onToggleFavorite={toggleFavorite}
+                />
+              ))}
+            </div>
+            {totalPages > 1 && (
+              <div className="flex items-center justify-center gap-3 mt-8">
+                <button
+                  disabled={page === 1}
+                  onClick={() => handlePageChange(Math.max(1, page - 1))}
+                  className="text-xs text-white/40 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
+                >
+                  Prev
+                </button>
+                <span className="text-xs text-white/40 font-mono">
+                  Page {page} of {totalPages}
+                </span>
+                <div className="flex items-center gap-1">
+                  <input
+                    value={pageInput}
+                    onChange={e => setPageInput(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && handlePageJump()}
+                    className="w-14 h-7 bg-black/60 border border-white/15 rounded-md px-2 text-xs text-white/70 outline-none focus:border-green-500/40"
+                    inputMode="numeric"
+                  />
+                  <button
+                    onClick={handlePageJump}
+                    className="h-7 px-2 rounded-md border border-white/15 text-[10px] font-mono text-white/50 hover:text-white hover:border-green-500/30 transition-colors"
+                  >
+                    Go
+                  </button>
+                </div>
+                <button
+                  disabled={page === totalPages}
+                  onClick={() =>
+                    handlePageChange(Math.min(totalPages, page + 1))
+                  }
+                  className="text-xs text-white/40 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
+                >
+                  Next
+                </button>
+              </div>
+            )}
+          </>
+        )}
+
+        {selectedCookie && (
+          <FreeCookieModal
+            cookie={selectedCookie}
+            globalIndex={selectedGlobalIndex ?? 0}
+            isAdmin={isAdmin}
+            canFavorite={canFavorite}
+            isFavorited={favoriteIds.has(selectedCookie.id)}
+            onToggleFavorite={toggleFavorite}
+            onClose={() => {
+              setSelectedCookie(null);
+              setSelectedGlobalIndex(null);
+            }}
+          />
+        )}
+      </div>
+    </div>
+  );
+}
+
           <div className="text-center py-16">
             <Loader2 className="w-8 h-8 text-green-400 animate-spin mx-auto" />
           </div>
