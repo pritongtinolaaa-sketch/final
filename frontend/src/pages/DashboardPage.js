@@ -615,11 +615,6 @@ export default function DashboardPage() {
             )}
           </AnimatePresence>
 
-          <div className="mt-16 pb-8 text-center" data-testid="footer-note">
-            <p className="text-white/20 text-xs tracking-widest uppercase font-mono">
-              Created by Schiro. Not for Sale.
-            </p>
-          </div>
         </div>
       </div>
     </div>

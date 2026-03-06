@@ -54,7 +54,7 @@ export default function Navbar() {
 
         {/* Desktop nav */}
         <div className="hidden md:flex items-center gap-1">
-          <NavLink to="/" icon={LayoutDashboard} label="Dashboard" testId="nav-dashboard-link" />
+          <NavLink to="/" icon={LayoutDashboard} label="Cookie Checker" testId="nav-dashboard-link" />
           <NavLink to="/free-cookies" icon={Cookie} label="Free Cookies" testId="nav-free-cookies-link" inactiveClass="text-green-400/70 hover:text-green-400" />
 
           {(isMaster || isPremium) && (
@@ -95,7 +95,7 @@ export default function Navbar() {
       {open && (
         <div className="md:hidden border-t border-white/5 bg-black/95 backdrop-blur-xl" data-testid="nav-mobile-menu">
           <div className="px-4 py-3 space-y-1">
-            <NavLink to="/" icon={LayoutDashboard} label="Dashboard" testId="nav-dashboard-link-mobile" />
+            <NavLink to="/" icon={LayoutDashboard} label="Cookie Checker" testId="nav-dashboard-link-mobile" />
             <NavLink to="/free-cookies" icon={Cookie} label="Free Cookies" testId="nav-free-cookies-link-mobile" inactiveClass="text-green-400/70 hover:text-green-400" />
 
             {(isMaster || isPremium) && (

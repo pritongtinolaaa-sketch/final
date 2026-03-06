@@ -1,5 +1,5 @@
 import "@/App.css";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { Toaster } from "@/components/ui/sonner";
 import AuthPage from "@/pages/AuthPage";
@@ -65,6 +65,9 @@ function AuthRoute({ children }) {
 }
 
 function AppLayout() {
+  const location = useLocation();
+  const showFooter = location.pathname !== "/auth";
+
   return (
     <>
       <Navbar />
@@ -79,6 +82,13 @@ function AppLayout() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
+      {showFooter && (
+        <footer className="py-6 text-center border-t border-white/5 bg-[#050505]">
+          <p className="text-white/20 text-xs tracking-widest font-mono">
+            © Schiro 2026
+          </p>
+        </footer>
+      )}
     </>
   );
 }
