@@ -1785,13 +1785,6 @@ async def seed_master_key():
         await db.access_keys.update_one({"is_master": True}, {"$set": {"key_value": master_key}})
         logger.info("Master key updated")
 
-    # Ensure auth-critical indexes exist for fast login/session validation.
-    await db.access_keys.create_index("key_value")
-    await db.access_keys.create_index("id")
-    await db.access_keys.create_index([("id", 1), ("active_sessions.session_id", 1)])
-    await db.favorites.create_index([("key_id", 1), ("favorited", 1)])
-    await db.favorites.create_index([("cookie_id", 1), ("favorited", 1)])
-
     _refresh_task = asyncio.create_task(refresh_free_cookie_tokens())
     logger.info("NFToken auto-refresh task started (every 10 min)")
 
