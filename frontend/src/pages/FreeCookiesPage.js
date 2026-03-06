@@ -160,6 +160,7 @@ function FreeCookieSmallCard({
   onDelete,
   onClick,
   onToggleFavorite,
+  isMasterFavoritesView = false,
 }) {
   const isAlive = cookie.is_alive !== false;
   return (
@@ -167,7 +168,7 @@ function FreeCookieSmallCard({
       data-testid={`free-cookie-card-${globalIndex}`}
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: (globalIndex % 20) * 0.04 }}
+      transition={{ delay: (globalIndex % 21) * 0.04 }}
       onClick={onClick}
       className={`group cursor-pointer rounded-xl p-4 transition-all duration-150
         bg-gradient-to-b from-white/10 to-white/[0.03]
@@ -260,6 +261,12 @@ function FreeCookieSmallCard({
       <div className="mt-3 pt-2 border-t border-white/5 text-[10px] font-mono text-center tracking-widest text-white/15 group-hover:text-green-400 transition-colors duration-200">
         TAP TO USE
       </div>
+
+      {isMasterFavoritesView && cookie.hidden_by_label && (
+        <div className="mt-1 text-[10px] text-white/35 font-mono text-center">
+          hidden by: {cookie.hidden_by_label}
+        </div>
+      )}
     </motion.div>
   );
 }
@@ -543,7 +550,7 @@ function FreeCookieModal({
                   </div>
                 )}
                 <p className="text-[10px] text-white/15 mt-2">
-                  Open Netflix on your TV, select "Sign In" and enter the 8-digit
+                  Open Netflix on your TV, select "Sign In" and enter the 8‑digit
                   code shown.
                 </p>
               </div>
@@ -644,17 +651,18 @@ export default function FreeCookiesPage() {
   const [allPlanOptions, setAllPlanOptions] = useState(['all']);
   const [allCountryOptions, setAllCountryOptions] = useState(['all']);
 
-  // Favorites state (per key)
+  // Favorites state
   const [activeTab, setActiveTab] = useState('all'); // 'all' | 'favorites'
   const [favoriteIds, setFavoriteIds] = useState(new Set());
-  const [favoriteCookies, setFavoriteCookies] = useState([]);
+  const [favoriteCookiesMaster, setFavoriteCookiesMaster] = useState([]);
+  const [favoriteCookiesOthers, setFavoriteCookiesOthers] = useState([]);
   const [favoritesLoading, setFavoritesLoading] = useState(false);
 
   const headers = { Authorization: `Bearer ${token}` };
   const isAdmin = user?.is_master === true;
   const isPremium = user?.tier === 'premium' && !isAdmin;
   const canFavorite = isAdmin || isPremium;
-  const pageSize = 20;
+  const pageSize = 21;
 
   const fetchCookies = async (pageParam = 1, filtersParam = filters) => {
     setLoading(true);
@@ -687,10 +695,7 @@ export default function FreeCookiesPage() {
       setAllPlanOptions(['all', ...plans]);
       setAllCountryOptions(['all', ...countries]);
 
-      if (data.display_limit != null) {
-        setDisplayLimit(data.display_limit);
-        setLimitInput(String(data.display_limit));
-      }
+      // do NOT reset displayLimit from here; backend doesn't send it
     } catch (err) {
       toast.error('Failed to load free cookies');
     } finally {
@@ -748,7 +753,8 @@ export default function FreeCookiesPage() {
       await axios.delete(`${API}/admin/free-cookies/${id}`, { headers });
       toast.success('Free cookie deleted');
       setCookies(prev => prev.filter(c => c.id !== id));
-      setFavoriteCookies(prev => prev.filter(c => c.id !== id));
+      setFavoriteCookiesMaster(prev => prev.filter(c => c.id !== id));
+      setFavoriteCookiesOthers(prev => prev.filter(c => c.id !== id));
       setFavoriteIds(prev => {
         const n = new Set(prev);
         n.delete(id);
@@ -776,9 +782,22 @@ export default function FreeCookiesPage() {
     setFavoritesLoading(true);
     try {
       const res = await axios.get(`${API}/favorites`, { headers });
-      const all = res.data.cookies || [];
-      const freeOnly = all.filter(c => c.source === 'free');
-      setFavoriteCookies(freeOnly);
+      const all = (res.data.cookies || []).filter(
+        c => !c.source || c.source === 'free',
+      );
+
+      if (isAdmin) {
+        const myId = user?.id;
+        const mine = all.filter(c => c.hidden_by === myId);
+        const others = all.filter(
+          c => c.hidden_by && c.hidden_by !== myId,
+        );
+        setFavoriteCookiesMaster(mine);
+        setFavoriteCookiesOthers(others);
+      } else {
+        setFavoriteCookiesMaster(all);
+        setFavoriteCookiesOthers([]);
+      }
     } catch {
       toast.error('Failed to load favorites');
     } finally {
@@ -804,7 +823,6 @@ export default function FreeCookiesPage() {
     fetchCookies(1, newFilters);
   };
 
-  // Hide favorites from public list for non-master
   const publicCookies = useMemo(() => {
     if (isAdmin) return cookies;
     return cookies.filter(c => !favoriteIds.has(c.id));
@@ -833,15 +851,18 @@ export default function FreeCookiesPage() {
       if (res.data.favorited) {
         newIds.add(cookieId);
         toast.success('Added to favorites ★');
-        // remove from public list locally
         setCookies(prev => prev.filter(c => c.id !== cookieId));
       } else {
         newIds.delete(cookieId);
         toast.success('Removed from favorites');
         if (activeTab === 'favorites') {
-          setFavoriteCookies(prev => prev.filter(c => c.id !== cookieId));
+          setFavoriteCookiesMaster(prev =>
+            prev.filter(c => c.id !== cookieId),
+          );
+          setFavoriteCookiesOthers(prev =>
+            prev.filter(c => c.id !== cookieId),
+          );
         }
-        // refetch public list
         fetchCookies(page, filters);
       }
       setFavoriteIds(newIds);
@@ -858,7 +879,9 @@ export default function FreeCookiesPage() {
   };
 
   const visibleList =
-    activeTab === 'favorites' ? favoriteCookies : publicCookies;
+    activeTab === 'favorites'
+      ? [...favoriteCookiesMaster, ...favoriteCookiesOthers]
+      : publicCookies;
 
   const selectedIndex = selectedCookie
     ? visibleList.findIndex(c => c.id === selectedCookie.id)
@@ -938,7 +961,6 @@ export default function FreeCookiesPage() {
           )}
         </div>
 
-        {/* Admin control card */}
         {isAdmin && (
           <div className="bg-gradient-to-b from-green-500/10 to-black border border-green-500/30 rounded-2xl p-5 mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
@@ -949,7 +971,7 @@ export default function FreeCookiesPage() {
                 </h2>
               </div>
               <p className="text-xs text-white/40 mb-2">
-                Control how many free cookies are visible to non-premium users,
+                Control how many free cookies are visible to non‑premium users,
                 and refresh NFToken for all free cookies.
               </p>
               <div className="flex items-center gap-3">
@@ -995,7 +1017,7 @@ export default function FreeCookiesPage() {
                 REFRESH TOKENS
               </Button>
               <span className="text-[11px] text-white/40">
-                This will try to re-generate NFToken for all free cookies.
+                This will try to re‑generate NFToken for all free cookies.
               </span>
             </div>
           </div>
@@ -1006,33 +1028,99 @@ export default function FreeCookiesPage() {
             <div className="text-center py-16">
               <Loader2 className="w-8 h-8 text-yellow-400 animate-spin mx-auto" />
             </div>
-          ) : favoriteCookies.length === 0 ? (
-            <div className="text-center py-16 text-white/40">
-              <Star className="w-10 h-10 mx-auto mb-2 text-white/20" />
-              <p>No favorites yet.</p>
-              <p className="text-xs text-white/30 mt-1">
-                Tap the star on any free cookie to add it here.
-              </p>
-            </div>
+          ) : !isAdmin ? (
+            favoriteCookiesMaster.length === 0 ? (
+              <div className="text-center py-16 text-white/40">
+                <Star className="w-10 h-10 mx-auto mb-2 text-white/20" />
+                <p>No favorites yet.</p>
+                <p className="text-xs text-white/30 mt-1">
+                  Tap the star on any free cookie to add it here.
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {favoriteCookiesMaster.map((cookie, idx) => (
+                  <FreeCookieSmallCard
+                    key={cookie.id}
+                    cookie={cookie}
+                    globalIndex={idx}
+                    isAdmin={isAdmin}
+                    canFavorite={canFavorite}
+                    isFavorited={favoriteIds.has(cookie.id)}
+                    onDelete={handleDeleteFreeCookie}
+                    onClick={() => {
+                      setSelectedCookie(cookie);
+                      setSelectedGlobalIndex(idx);
+                    }}
+                    onToggleFavorite={toggleFavorite}
+                    isMasterFavoritesView={false}
+                  />
+                ))}
+              </div>
+            )
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {favoriteCookies.map((cookie, idx) => (
-                <FreeCookieSmallCard
-                  key={cookie.id}
-                  cookie={cookie}
-                  globalIndex={idx}
-                  isAdmin={isAdmin}
-                  canFavorite={canFavorite}
-                  isFavorited={favoriteIds.has(cookie.id)}
-                  onDelete={handleDeleteFreeCookie}
-                  onClick={() => {
-                    setSelectedCookie(cookie);
-                    setSelectedGlobalIndex(idx);
-                  }}
-                  onToggleFavorite={toggleFavorite}
-                />
-              ))}
-            </div>
+            <>
+              <h3 className="text-xs font-mono uppercase tracking-wide text-white/40 mb-2">
+                Your favorites
+              </h3>
+              {favoriteCookiesMaster.length === 0 ? (
+                <p className="text-[11px] text-white/30 mb-4">
+                  You have no favorites yet.
+                </p>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+                  {favoriteCookiesMaster.map((cookie, idx) => (
+                    <FreeCookieSmallCard
+                      key={cookie.id}
+                      cookie={cookie}
+                      globalIndex={idx}
+                      isAdmin={isAdmin}
+                      canFavorite={canFavorite}
+                      isFavorited={favoriteIds.has(cookie.id)}
+                      onDelete={handleDeleteFreeCookie}
+                      onClick={() => {
+                        setSelectedCookie(cookie);
+                        setSelectedGlobalIndex(idx);
+                      }}
+                      onToggleFavorite={toggleFavorite}
+                      isMasterFavoritesView={true}
+                    />
+                  ))}
+                </div>
+              )}
+
+              <div className="border-t border-white/10 my-4 pt-3">
+                <h3 className="text-xs font-mono uppercase tracking-wide text-white/40 mb-2">
+                  Premium users’ favorites
+                </h3>
+              </div>
+
+              {favoriteCookiesOthers.length === 0 ? (
+                <p className="text-[11px] text-white/30">
+                  No favorites from premium users yet.
+                </p>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {favoriteCookiesOthers.map((cookie, idx) => (
+                    <FreeCookieSmallCard
+                      key={cookie.id}
+                      cookie={cookie}
+                      globalIndex={idx}
+                      isAdmin={isAdmin}
+                      canFavorite={canFavorite}
+                      isFavorited={favoriteIds.has(cookie.id)}
+                      onDelete={handleDeleteFreeCookie}
+                      onClick={() => {
+                        setSelectedCookie(cookie);
+                        setSelectedGlobalIndex(idx);
+                      }}
+                      onToggleFavorite={toggleFavorite}
+                      isMasterFavoritesView={true}
+                    />
+                  ))}
+                </div>
+              )}
+            </>
           )
         ) : loading ? (
           <div className="text-center py-16">
