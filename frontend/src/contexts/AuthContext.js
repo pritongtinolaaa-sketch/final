@@ -13,8 +13,7 @@ export function AuthProvider({ children }) {
     if (!token) { setLoading(false); return; }
     try {
       const res = await axios.get(`${API}/auth/me`, {
-        headers: { Authorization: `Bearer ${token}` },
-        timeout: 10000,
+        headers: { Authorization: `Bearer ${token}` }
       });
       setUser(res.data);
     } catch {
