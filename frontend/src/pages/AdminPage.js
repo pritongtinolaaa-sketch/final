@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Key, Plus, Trash2, Eye, EyeOff, Users, Monitor, Copy, X, Loader2, KeyRound, Calendar, Clock, Shield, Crown, Star } from 'lucide-react';
+import { Key, Plus, Trash2, Eye, EyeOff, Users, Monitor, Copy, X, Loader2, KeyRound, Calendar, Clock, Shield, Crown, Star, Pencil } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
 
@@ -64,6 +64,7 @@ export default function AdminPage() {
   const [expandedSessions, setExpandedSessions] = useState(null);
   const [editingExpiry, setEditingExpiry] = useState({});
   const [editingTier, setEditingTier] = useState({});
+  const [editingLabel, setEditingLabel] = useState({});
 
   const headers = { Authorization: `Bearer ${token}` };
 
@@ -155,6 +156,22 @@ export default function AdminPage() {
       toast.success(`Tier updated to ${tier}`);
     } catch {
       toast.error('Failed to update tier');
+    }
+  };
+
+  const updateLabel = async (keyId, label) => {
+    const nextLabel = String(label || '').trim();
+    if (!nextLabel) {
+      toast.error('Name cannot be empty');
+      return;
+    }
+    try {
+      await axios.patch(`${API}/admin/keys/${keyId}`, { label: nextLabel }, { headers });
+      fetchKeys();
+      setEditingLabel(prev => ({ ...prev, [keyId]: false }));
+      toast.success('Name updated');
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to update name');
     }
   };
 
@@ -296,6 +313,41 @@ export default function AdminPage() {
                 </Button>
               </div>
             )}
+
+            {editingLabel[keyItem.id] && (
+              <div className="flex items-center gap-2 mt-3 flex-wrap">
+                <Input
+                  type="text"
+                  defaultValue={keyItem.label}
+                  id={`label-input-${keyItem.id}`}
+                  className="bg-black/50 border-white/10 focus:border-primary text-white h-8 w-56 text-xs"
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') {
+                      const val = document.getElementById(`label-input-${keyItem.id}`).value;
+                      updateLabel(keyItem.id, val);
+                    }
+                  }}
+                />
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    const val = document.getElementById(`label-input-${keyItem.id}`).value;
+                    updateLabel(keyItem.id, val);
+                  }}
+                  className="h-8 bg-primary/20 hover:bg-primary/40 text-primary text-xs px-3"
+                >
+                  Save
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => setEditingLabel(prev => ({ ...prev, [keyItem.id]: false }))}
+                  className="h-8 text-white/20 hover:text-white px-2"
+                >
+                  <X className="w-3 h-3" />
+                </Button>
+              </div>
+            )}
           </div>
 
           <div className="flex items-center gap-2">
@@ -331,6 +383,16 @@ export default function AdminPage() {
 
             <Button size="sm" variant="ghost" onClick={() => setExpandedSessions(expandedSessions === keyItem.id ? null : keyItem.id)} className="text-white/30 hover:text-white">
               <Users className="w-3.5 h-3.5" />
+            </Button>
+
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => setEditingLabel(prev => ({ ...prev, [keyItem.id]: !prev[keyItem.id] }))}
+              className="text-white/30 hover:text-primary"
+              title="Rename key"
+            >
+              <Pencil className="w-3.5 h-3.5" />
             </Button>
 
             {!keyItem.is_master && (
