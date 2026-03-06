@@ -806,21 +806,38 @@ export default function AdminCookiesPage() {
   }, [activeTab]); // eslint-disable-line
 
   const filteredCookies = useMemo(() => {
-    return cookies.filter(c => {
-      if (filters.status === 'alive' && c.is_alive === false) return false;
-      if (filters.status === 'dead' && c.is_alive !== false) return false;
-      if (filters.plan !== 'all' && c.plan !== filters.plan) return false;
-      if (filters.country !== 'all' && c.country !== filters.country)
-        return false;
-      return true;
-    });
-  }, [cookies, filters]);
+  return cookies.filter(c => {
+    if (filters.status === 'alive' && c.is_alive === false) return false;
+    if (filters.status === 'dead' && c.is_alive !== false) return false;
+    if (filters.plan !== 'all' && c.plan !== filters.plan) return false;
+    if (filters.country !== 'all' && c.country !== filters.country)
+      return false;
+    return true;
+  });
+}, [cookies, filters]);
 
-  // Hide favorites from All tab for non-master (like Free page)
-  const publicCookies = useMemo(() => {
-    if (isAdmin) return filteredCookies;
-    return filteredCookies.filter(c => !favoriteIds.has(c.id));
-  }, [filteredCookies, favoriteIds, isAdmin]);
+// Hide cookies hidden by other keys from All tab for premium (master sees all)
+const publicCookies = useMemo(() => {
+  // Master key: see everything
+  if (isAdmin) return filteredCookies;
+
+  // Premium: hide cookies whose hidden_by contains any other key
+  return filteredCookies.filter(c => {
+    const hiddenBy = new Set<string>((c.hidden_by as string[]) || []);
+
+    // nobody hid it -> visible
+    if (hiddenBy.size === 0) return true;
+
+    // if there is any hider that is not me -> hide
+    if (user?.id && (hiddenBy.size > 1 || !hiddenBy.has(user.id))) {
+      return false;
+    }
+
+    // hidden only by me -> still show
+    return true;
+  });
+}, [filteredCookies, isAdmin, user?.id]);
+
 
   const totalForTab =
     activeTab === 'favorites'
