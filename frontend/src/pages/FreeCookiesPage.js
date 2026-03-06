@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import {
   Gift, Trash2, Copy, Check, Loader2, Mail, CreditCard, Globe, Calendar,
-  Clock, Users, Key, Link2, Settings, RefreshCw, Tv, Monitor, Smartphone, X, Filter
+  Clock, Users, Key, Link2, Settings, RefreshCw, Tv, Monitor, Smartphone, X, Filter, Star
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
@@ -52,7 +52,6 @@ function InfoRow({ icon, label, value }) {
 
 function FilterBar({ filters, setFilters, planOptions, countryOptions }) {
   const statuses = ['all', 'alive', 'dead'];
-
   const selectClass = "bg-black/50 border border-white/10 text-white/60 text-xs rounded-lg px-3 h-8 outline-none focus:border-green-500/40 cursor-pointer hover:border-white/20 transition-colors";
 
   return (
@@ -110,7 +109,7 @@ function FilterBar({ filters, setFilters, planOptions, countryOptions }) {
   );
 }
 
-function FreeCookieSmallCard({ cookie, globalIndex, isAdmin, onDelete, onClick }) {
+function FreeCookieSmallCard({ cookie, globalIndex, isAdmin, canFavorite, isFavorited, onDelete, onClick, onToggleFavorite }) {
   const isAlive = cookie.is_alive !== false;
   return (
     <motion.div
@@ -134,19 +133,31 @@ function FreeCookieSmallCard({ cookie, globalIndex, isAdmin, onDelete, onClick }
           <span className="font-mono text-xs text-white/30">#{globalIndex + 1}</span>
         </div>
 
-        <Badge className={`${isAlive ? 'bg-green-500/20 text-green-400 border-green-500/30' : 'bg-red-500/20 text-red-400 border-red-500/30'} border text-[10px] font-mono px-1.5 py-0`}>
-          {isAlive ? 'ALIVE' : 'DEAD'}
-        </Badge>
+        <div className="flex items-center gap-1">
+          <Badge className={`${isAlive ? 'bg-green-500/20 text-green-400 border-green-500/30' : 'bg-red-500/20 text-red-400 border-red-500/30'} border text-[10px] font-mono px-1.5 py-0`}>
+            {isAlive ? 'ALIVE' : 'DEAD'}
+          </Badge>
 
-        {isAdmin && (
-          <button
-            onClick={e => { e.stopPropagation(); onDelete(cookie.id); }}
-            className="text-white/15 hover:text-red-400 transition-colors p-1"
-            data-testid={`delete-free-cookie-${globalIndex}`}
-          >
-            <Trash2 className="w-3.5 h-3.5" />
-          </button>
-        )}
+          {canFavorite && (
+            <button
+              onClick={e => { e.stopPropagation(); onToggleFavorite(cookie.id); }}
+              className={`p-1 transition-all ${isFavorited ? 'text-yellow-400 hover:text-yellow-300' : 'text-white/15 hover:text-yellow-400'}`}
+              data-testid={`favorite-btn-${globalIndex}`}
+            >
+              <Star className={`w-3.5 h-3.5 ${isFavorited ? 'fill-yellow-400' : ''}`} />
+            </button>
+          )}
+
+          {isAdmin && (
+            <button
+              onClick={e => { e.stopPropagation(); onDelete(cookie.id); }}
+              className="text-white/15 hover:text-red-400 transition-colors p-1"
+              data-testid={`delete-free-cookie-${globalIndex}`}
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="flex items-center gap-2 mb-1.5">
@@ -168,7 +179,7 @@ function FreeCookieSmallCard({ cookie, globalIndex, isAdmin, onDelete, onClick }
   );
 }
 
-function FreeCookieModal({ cookie, globalIndex, isAdmin, onClose }) {
+function FreeCookieModal({ cookie, globalIndex, isAdmin, canFavorite, isFavorited, onToggleFavorite, onClose }) {
   const [tvCode, setTvCode] = useState('');
   const [tvLoading, setTvLoading] = useState(false);
   const [tvResult, setTvResult] = useState(null);
@@ -237,9 +248,20 @@ function FreeCookieModal({ cookie, globalIndex, isAdmin, onClose }) {
                 </span>
               )}
             </div>
-            <button onClick={onClose} className="text-white/30 hover:text-white transition-colors p-1">
-              <X className="w-4 h-4" />
-            </button>
+            <div className="flex items-center gap-2">
+              {canFavorite && (
+                <button
+                  onClick={() => onToggleFavorite(cookie.id)}
+                  className={`p-1.5 rounded-lg transition-all ${isFavorited ? 'text-yellow-400 bg-yellow-400/10 hover:bg-yellow-400/20' : 'text-white/20 hover:text-yellow-400 hover:bg-yellow-400/10'}`}
+                  title={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
+                >
+                  <Star className={`w-4 h-4 ${isFavorited ? 'fill-yellow-400' : ''}`} />
+                </button>
+              )}
+              <button onClick={onClose} className="text-white/30 hover:text-white transition-colors p-1">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
           </div>
 
           <div className="overflow-y-auto flex-1">
@@ -376,34 +398,82 @@ export default function FreeCookiesPage() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
-
-  // ✅ Plan & country options built from ALL fetched cookies across pages
   const [allPlanOptions, setAllPlanOptions] = useState(['all']);
   const [allCountryOptions, setAllCountryOptions] = useState(['all']);
+
+  // --- Favorites state ---
+  const [activeTab, setActiveTab] = useState('all'); // 'all' | 'favorites'
+  const [favoriteIds, setFavoriteIds] = useState(new Set());
+  const [favoriteCookies, setFavoriteCookies] = useState([]);
+  const [favoritesLoading, setFavoritesLoading] = useState(false);
 
   const headers = { Authorization: `Bearer ${token}` };
   const isAdmin = user?.is_master === true;
   const isPremium = user?.tier === 'premium' && !isAdmin;
+  const canFavorite = isAdmin || isPremium;
   const pageSize = 20;
 
-  // ✅ Fetch filter options once on mount (unfiltered, just to populate dropdowns)
   useEffect(() => {
     if (!user) return;
     fetchFilterOptions();
+    if (canFavorite) fetchFavoriteIds();
   }, [user]); // eslint-disable-line
 
-  // ✅ Re-fetch cookies whenever page OR filters change
   useEffect(() => {
     if (!user) return;
     fetchCookies(page, filters);
   }, [user, page, filters]); // eslint-disable-line
 
-  // ✅ Reset to page 1 when filters change
   useEffect(() => {
     setPage(1);
   }, [filters.status, filters.plan, filters.country]);
 
-  // ✅ Fetch all unique plans & countries for dropdown options (unfiltered)
+  useEffect(() => {
+    if (activeTab === 'favorites' && canFavorite) fetchFavorites();
+  }, [activeTab]); // eslint-disable-line
+
+  // --- Favorites API ---
+  const fetchFavoriteIds = async () => {
+    try {
+      const res = await axios.get(`${API}/favorites/ids`, { headers });
+      setFavoriteIds(new Set(res.data.favorites));
+    } catch {
+      // silently fail
+    }
+  };
+
+  const fetchFavorites = async () => {
+    setFavoritesLoading(true);
+    try {
+      const res = await axios.get(`${API}/favorites`, { headers });
+      setFavoriteCookies(res.data.cookies || []);
+    } catch {
+      toast.error('Failed to load favorites');
+    } finally {
+      setFavoritesLoading(false);
+    }
+  };
+
+  const toggleFavorite = async (cookieId) => {
+    try {
+      const res = await axios.post(`${API}/favorites/${cookieId}`, {}, { headers });
+      const newIds = new Set(favoriteIds);
+      if (res.data.favorited) {
+        newIds.add(cookieId);
+        toast.success('Added to favorites ★');
+      } else {
+        newIds.delete(cookieId);
+        toast.success('Removed from favorites');
+        if (activeTab === 'favorites') {
+          setFavoriteCookies(prev => prev.filter(c => c.id !== cookieId));
+        }
+      }
+      setFavoriteIds(newIds);
+    } catch {
+      toast.error('Failed to update favorites');
+    }
+  };
+
   const fetchFilterOptions = async () => {
     try {
       const endpoint = isAdmin ? `${API}/admin/free-cookies` : `${API}/free-cookies`;
@@ -412,7 +482,6 @@ export default function FreeCookiesPage() {
         params: { page: 1, page_size: 500, status: 'all', plan: '', country: '' }
       });
       const all = res.data.cookies || [];
-
       const planOrder = ['Basic', 'Basic with ads', 'Mobile', 'Standard with ads', 'Standard (HD)', 'Premium (UHD)'];
       const planSet = new Set(all.map(c => c.plan).filter(Boolean));
       const sortedPlans = Array.from(planSet).sort((a, b) => {
@@ -424,15 +493,11 @@ export default function FreeCookiesPage() {
         return ai - bi;
       });
       setAllPlanOptions(['all', ...sortedPlans]);
-
       const countrySet = new Set(all.map(c => c.country).filter(Boolean));
       setAllCountryOptions(['all', ...Array.from(countrySet).sort()]);
-    } catch {
-      // silently fail — dropdowns will just show "all"
-    }
+    } catch {}
   };
 
-  // ✅ fetchCookies now sends status, plan, country to backend
   const fetchCookies = async (currentPage = 1, currentFilters = filters) => {
     setLoading(true);
     try {
@@ -443,7 +508,6 @@ export default function FreeCookiesPage() {
         plan: currentFilters.plan === 'all' ? '' : currentFilters.plan,
         country: currentFilters.country === 'all' ? '' : currentFilters.country,
       };
-
       if (isAdmin) {
         const res = await axios.get(`${API}/admin/free-cookies`, { headers, params });
         setCookies(res.data.cookies);
@@ -468,6 +532,10 @@ export default function FreeCookiesPage() {
     try {
       await axios.delete(`${API}/admin/free-cookies/${cookieId}`, { headers });
       setCookies(prev => prev.filter(c => c.id !== cookieId));
+      setFavoriteCookies(prev => prev.filter(c => c.id !== cookieId));
+      const newIds = new Set(favoriteIds);
+      newIds.delete(cookieId);
+      setFavoriteIds(newIds);
       if (selectedCookie?.id === cookieId) setSelectedCookie(null);
       toast.success('Free cookie removed');
     } catch {
@@ -508,13 +576,8 @@ export default function FreeCookiesPage() {
 
   function Pagination() {
     const [inputVal, setInputVal] = useState(String(page));
-
-    useEffect(() => {
-      setInputVal(String(page));
-    }, []); // eslint-disable-line
-
+    useEffect(() => { setInputVal(String(page)); }, []); // eslint-disable-line
     if (totalPages <= 1) return null;
-
     const handleJump = (e) => {
       if (e.key === 'Enter') {
         const val = parseInt(inputVal);
@@ -526,64 +589,36 @@ export default function FreeCookiesPage() {
         }
       }
     };
-
     const btnClass = (p) =>
       `px-3 h-8 rounded-lg text-xs font-mono border transition-all ${
         page === p
           ? 'bg-green-500/20 text-green-400 border-green-500/40'
           : 'text-white/30 border-white/10 hover:border-white/20 hover:text-white/60'
       }`;
-
     const siblings = 2;
     const rangeStart = Math.max(2, page - siblings);
     const rangeEnd = Math.min(totalPages - 1, page + siblings);
     const pages = [];
-
     pages.push(1);
     if (rangeStart > 2) pages.push('left-ellipsis');
     for (let i = rangeStart; i <= rangeEnd; i++) pages.push(i);
     if (rangeEnd < totalPages - 1) pages.push('right-ellipsis');
     if (totalPages > 1) pages.push(totalPages);
-
     return (
       <div className="flex items-center justify-center gap-1.5 flex-wrap">
-        <button
-          onClick={() => setPage(p => Math.max(1, p - 1))}
-          disabled={page === 1}
-          className="px-3 h-8 rounded-lg text-xs font-mono text-white/30 border border-white/10 hover:border-white/20 hover:text-white/60 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-        >
-          &lt;
-        </button>
-
+        <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} className="px-3 h-8 rounded-lg text-xs font-mono text-white/30 border border-white/10 hover:border-white/20 hover:text-white/60 disabled:opacity-30 disabled:cursor-not-allowed transition-all">&lt;</button>
         {pages.map((p, i) => {
-          if (p === 'left-ellipsis' || p === 'right-ellipsis') {
-            return <span key={p} className="text-white/20 text-xs font-mono px-1">...</span>;
-          }
-          if (p === page) {
-            return (
-              <input
-                key="current"
-                type="text"
-                inputMode="numeric"
-                pattern="[0-9]*"
-                value={inputVal}
-                onChange={e => setInputVal(e.target.value.replace(/\D/g, ''))}
-                onKeyDown={handleJump}
-                onBlur={() => setInputVal(String(page))}
-                className="w-14 h-8 rounded-lg text-xs font-mono text-center text-green-400 bg-green-500/20 border border-green-500/40 focus:border-green-500/60 outline-none transition-all appearance-none"
-              />
-            );
-          }
+          if (p === 'left-ellipsis' || p === 'right-ellipsis') return <span key={p} className="text-white/20 text-xs font-mono px-1">...</span>;
+          if (p === page) return (
+            <input key="current" type="text" inputMode="numeric" pattern="[0-9]*" value={inputVal}
+              onChange={e => setInputVal(e.target.value.replace(/\D/g, ''))}
+              onKeyDown={handleJump} onBlur={() => setInputVal(String(page))}
+              className="w-14 h-8 rounded-lg text-xs font-mono text-center text-green-400 bg-green-500/20 border border-green-500/40 focus:border-green-500/60 outline-none transition-all appearance-none"
+            />
+          );
           return <button key={p} onClick={() => setPage(p)} className={btnClass(p)}>{p}</button>;
         })}
-
-        <button
-          onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-          disabled={page === totalPages}
-          className="px-3 h-8 rounded-lg text-xs font-mono text-white/30 border border-white/10 hover:border-white/20 hover:text-white/60 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-        >
-          &gt;
-        </button>
+        <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages} className="px-3 h-8 rounded-lg text-xs font-mono text-white/30 border border-white/10 hover:border-white/20 hover:text-white/60 disabled:opacity-30 disabled:cursor-not-allowed transition-all">&gt;</button>
       </div>
     );
   }
@@ -615,6 +650,38 @@ export default function FreeCookiesPage() {
             )}
           </div>
         </motion.div>
+
+        {/* Tabs — only show for premium/master */}
+        {canFavorite && (
+          <div className="flex items-center gap-2 mb-6">
+            <button
+              onClick={() => setActiveTab('all')}
+              className={`flex items-center gap-2 px-4 h-9 rounded-xl text-xs font-mono uppercase tracking-wide border transition-all ${
+                activeTab === 'all'
+                  ? 'bg-white/10 text-white/80 border-white/20'
+                  : 'text-white/30 border-white/8 hover:border-white/15 hover:text-white/50'
+              }`}
+            >
+              <Gift className="w-3.5 h-3.5" /> All Cookies
+            </button>
+            <button
+              onClick={() => setActiveTab('favorites')}
+              className={`flex items-center gap-2 px-4 h-9 rounded-xl text-xs font-mono uppercase tracking-wide border transition-all ${
+                activeTab === 'favorites'
+                  ? 'bg-yellow-400/15 text-yellow-400 border-yellow-400/30'
+                  : 'text-white/30 border-white/8 hover:border-yellow-400/20 hover:text-yellow-400/60'
+              }`}
+            >
+              <Star className={`w-3.5 h-3.5 ${activeTab === 'favorites' ? 'fill-yellow-400' : ''}`} />
+              Favorites
+              {favoriteIds.size > 0 && (
+                <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-mono ${activeTab === 'favorites' ? 'bg-yellow-400/20 text-yellow-400' : 'bg-white/10 text-white/30'}`}>
+                  {favoriteIds.size}
+                </span>
+              )}
+            </button>
+          </div>
+        )}
 
         {isAdmin && (
           <motion.div
@@ -651,55 +718,97 @@ export default function FreeCookiesPage() {
           </motion.div>
         )}
 
-        {loading ? (
-          <div className="text-center py-20">
-            <Loader2 className="w-8 h-8 text-primary animate-spin mx-auto" />
-          </div>
-        ) : total === 0 && filters.status === 'all' && !filters.plan && !filters.country ? (
-          <div className="text-center py-20 text-white/30">
-            <Gift className="w-12 h-12 mx-auto mb-3 text-white/10" />
-            <p>No free cookies available</p>
-            {!isAdmin && !isPremium && <p className="text-xs text-white/15 mt-1">Check back later — the admin will add some!</p>}
-            {isAdmin && <p className="text-xs text-white/15 mt-1">Check cookies on the Dashboard, then add valid ones here.</p>}
-          </div>
-        ) : (
+        {/* FAVORITES TAB */}
+        {activeTab === 'favorites' && canFavorite && (
           <>
-            <FilterBar
-              filters={filters}
-              setFilters={setFilters}
-              planOptions={allPlanOptions}
-              countryOptions={allCountryOptions}
-            />
-
-            {cookies.length === 0 ? (
-              <div className="text-center py-16 text-white/30">
-                <Filter className="w-10 h-10 mx-auto mb-3 text-white/10" />
-                <p>No cookies match your filters</p>
-                <button onClick={() => setFilters({ status: 'all', plan: 'all', country: 'all' })} className="mt-2 text-xs text-white/20 hover:text-green-400 transition-colors font-mono">
-                  Reset filters
-                </button>
+            {favoritesLoading ? (
+              <div className="text-center py-20">
+                <Loader2 className="w-8 h-8 text-yellow-400 animate-spin mx-auto" />
+              </div>
+            ) : favoriteCookies.length === 0 ? (
+              <div className="text-center py-20 text-white/30">
+                <Star className="w-12 h-12 mx-auto mb-3 text-white/10" />
+                <p>No favorites yet</p>
+                <p className="text-xs text-white/15 mt-1">Tap the ★ on any cookie to save it here</p>
               </div>
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-                {cookies.map((cookie, idx) => (
+                {favoriteCookies.map((cookie, idx) => (
                   <FreeCookieSmallCard
                     key={cookie.id}
                     cookie={cookie}
-                    globalIndex={getGlobalIndex(idx)}
+                    globalIndex={idx}
                     isAdmin={isAdmin}
+                    canFavorite={canFavorite}
+                    isFavorited={true}
                     onDelete={deleteCookie}
+                    onToggleFavorite={toggleFavorite}
                     onClick={() => {
                       setSelectedCookie(cookie);
-                      setSelectedGlobalIndex(getGlobalIndex(idx));
+                      setSelectedGlobalIndex(idx);
                     }}
                   />
                 ))}
               </div>
             )}
+          </>
+        )}
 
-            <div className="mt-8">
-              <Pagination />
-            </div>
+        {/* ALL COOKIES TAB */}
+        {activeTab === 'all' && (
+          <>
+            {loading ? (
+              <div className="text-center py-20">
+                <Loader2 className="w-8 h-8 text-primary animate-spin mx-auto" />
+              </div>
+            ) : total === 0 && filters.status === 'all' && !filters.plan && !filters.country ? (
+              <div className="text-center py-20 text-white/30">
+                <Gift className="w-12 h-12 mx-auto mb-3 text-white/10" />
+                <p>No free cookies available</p>
+                {!isAdmin && !isPremium && <p className="text-xs text-white/15 mt-1">Check back later — the admin will add some!</p>}
+                {isAdmin && <p className="text-xs text-white/15 mt-1">Check cookies on the Dashboard, then add valid ones here.</p>}
+              </div>
+            ) : (
+              <>
+                <FilterBar
+                  filters={filters}
+                  setFilters={setFilters}
+                  planOptions={allPlanOptions}
+                  countryOptions={allCountryOptions}
+                />
+                {cookies.length === 0 ? (
+                  <div className="text-center py-16 text-white/30">
+                    <Filter className="w-10 h-10 mx-auto mb-3 text-white/10" />
+                    <p>No cookies match your filters</p>
+                    <button onClick={() => setFilters({ status: 'all', plan: 'all', country: 'all' })} className="mt-2 text-xs text-white/20 hover:text-green-400 transition-colors font-mono">
+                      Reset filters
+                    </button>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                    {cookies.map((cookie, idx) => (
+                      <FreeCookieSmallCard
+                        key={cookie.id}
+                        cookie={cookie}
+                        globalIndex={getGlobalIndex(idx)}
+                        isAdmin={isAdmin}
+                        canFavorite={canFavorite}
+                        isFavorited={favoriteIds.has(cookie.id)}
+                        onDelete={deleteCookie}
+                        onToggleFavorite={toggleFavorite}
+                        onClick={() => {
+                          setSelectedCookie(cookie);
+                          setSelectedGlobalIndex(getGlobalIndex(idx));
+                        }}
+                      />
+                    ))}
+                  </div>
+                )}
+                <div className="mt-8">
+                  <Pagination />
+                </div>
+              </>
+            )}
           </>
         )}
       </div>
@@ -709,6 +818,9 @@ export default function FreeCookiesPage() {
           cookie={selectedCookie}
           globalIndex={selectedGlobalIndex}
           isAdmin={isAdmin}
+          canFavorite={canFavorite}
+          isFavorited={favoriteIds.has(selectedCookie.id)}
+          onToggleFavorite={toggleFavorite}
           onClose={() => { setSelectedCookie(null); setSelectedGlobalIndex(null); }}
         />
       )}
