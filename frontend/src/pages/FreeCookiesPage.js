@@ -373,8 +373,7 @@ function FreeCookieModal({
           transition={{ type: 'spring', stiffness: 300, damping: 25 }}
           className="relative w-[calc(100vw-2rem)] sm:w-[500px] max-h-[85vh] bg-[#0a0a0a] border border-white/10 rounded-2xl z-10 flex flex-col overflow-hidden shadow-[inset_0_1px_0_rgba(255,255,255,0.1),0_24px_48px_rgba(0,0,0,0.8)]"
         >
-          {/* header and body content identical to your original modal */}
-          {/* For brevity we omit inner JSX; logic is unchanged */}
+          {/* keep your original modal body here */}
         </motion.div>
       </div>
     </AnimatePresence>
@@ -617,22 +616,16 @@ export default function FreeCookiesPage() {
     setPageInput(String(page));
   }, [page]);
 
-  const handlePageChange = newPage => {
-    setPage(newPage);
-    fetchCookies(newPage, filters);
-  };
-
   const handlePageChange = (newPage, filtersParam = filters) => {
     setPage(newPage);
     fetchCookies(newPage, filtersParam);
   };
 
-  // filter apply helper, used by FilterBar
   const handleFilterApply = newFilters => {
     setFilters(newFilters);
     handlePageChange(1, newFilters);
   };
-  
+
   const handlePageJump = () => {
     const parsed = Number.parseInt(pageInput, 10);
     if (Number.isNaN(parsed)) {
