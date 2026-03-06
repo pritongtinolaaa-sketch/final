@@ -238,7 +238,7 @@ export default function AdminPage() {
               )}
             </div>
             <div className="flex items-center gap-4 mt-1 text-sm flex-wrap">
-              <span className="font-mono text-white/30">{keyItem.key_preview}</span>
+              <span className="font-mono text-white/30">••••••••••••</span>
               <span className="flex items-center gap-1 text-white/30">
                 <Monitor className="w-3.5 h-3.5" />
                 {keyItem.session_count}/{keyItem.max_devices} devices
