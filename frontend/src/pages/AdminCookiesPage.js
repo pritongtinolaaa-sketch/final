@@ -336,7 +336,7 @@ function AdminCookieModal({
 }) {
   const [tvCode, setTvCode] = useState('');
   const [tvLoading, setTvLoading] = useState(false);
-  const [tvResult, setTvResult] = useState<any>(null);
+  const [tvResult, setTvResult] = useState(null);
   const [tokenRefreshing, setTokenRefreshing] = useState(false);
   const [currentNftoken, setCurrentNftoken] = useState(cookie.nftoken);
   const [currentNftokenLink, setCurrentNftokenLink] = useState(
@@ -364,7 +364,7 @@ function AdminCookieModal({
       setTvResult(res.data);
       if (res.data.success) toast.success(res.data.message);
       else toast.error(res.data.message);
-    } catch (err: any) {
+    } catch (err) {
       toast.error(err.response?.data?.detail || 'Failed to activate TV');
     } finally {
       setTvLoading(false);
@@ -680,22 +680,22 @@ function AdminCookieModal({
 
 export default function AdminCookiesPage() {
   const { token, user } = useAuth();
-  const [cookies, setCookies] = useState<any[]>([]);
-  const [freeCookieEmails, setFreeCookieEmails] = useState<Set<string>>(
+  const [cookies, setCookies] = useState([]);
+  const [freeCookieEmails, setFreeCookieEmails] = useState(
     new Set(),
   );
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [selectedCookie, setSelectedCookie] = useState<any | null>(null);
+  const [selectedCookie, setSelectedCookie] = useState(null);
   const [filters, setFilters] = useState({
     status: 'all',
     plan: 'all',
     country: 'all',
   });
 
-  const [activeTab, setActiveTab] = useState<'all' | 'favorites'>('all');
-  const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
-  const [favoriteCookies, setFavoriteCookies] = useState<any[]>([]);
+  const [activeTab, setActiveTab] = useState('all');
+  const [favoriteIds, setFavoriteIds] = useState(new Set());
+  const [favoriteCookies, setFavoriteCookies] = useState([]);
   const [favoritesLoading, setFavoritesLoading] = useState(false);
 
   const [page, setPage] = useState(1);
