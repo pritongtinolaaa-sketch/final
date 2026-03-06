@@ -206,7 +206,7 @@ function AdminCookieSmallCard({
 }: {
   cookie: any;
   index: number;
-  onDelete: (id: string) => void;
+  onDelete: (cookie: any) => void;
   onClick: () => void;
   isInFreeCookies: boolean;
   isAdmin: boolean;
@@ -215,6 +215,7 @@ function AdminCookieSmallCard({
   onToggleFavorite: (id: string) => void;
 }) {
   const isAlive = cookie.is_alive !== false;
+  const sourceLabel = cookie.source === 'free' ? 'FREE' : 'ADMIN';
   return (
     <motion.div
       initial={{ opacity: 0, y: 16 }}
@@ -250,6 +251,11 @@ function AdminCookieSmallCard({
           >
             {isAlive ? 'ALIVE' : 'DEAD'}
           </Badge>
+          {sourceLabel && (
+            <Badge className="bg-blue-500/20 text-blue-300 border border-blue-500/30 text-[10px] font-mono px-1.5 py-0">
+              {sourceLabel}
+            </Badge>
+          )}
           {isInFreeCookies && (
             <Badge className="bg-green-500/20 text-green-400 border border-green-500/30 text-[10px] font-mono px-1.5 py-0">
               IN FREE
@@ -280,7 +286,7 @@ function AdminCookieSmallCard({
             <button
               onClick={e => {
                 e.stopPropagation();
-                onDelete(cookie.id);
+                onDelete(cookie);
               }}
               className="text-white/15 hover:text-red-400 transition-colors p-1"
             >
@@ -347,6 +353,8 @@ function AdminCookieModal({
   const [showBrowserCookies, setShowBrowserCookies] = useState(false);
   const { token } = useAuth();
   const isAlive = cookie.is_alive !== false;
+  const cookieSource = cookie.source === 'free' ? 'free' : 'admin';
+  const sourceLabel = cookieSource === 'free' ? 'FREE' : 'ADMIN';
 
   const handleTvCode = async () => {
     if (!tvCode.trim()) {
@@ -358,7 +366,7 @@ function AdminCookieModal({
     try {
       const res = await axios.post(
         `${API}/tv-code`,
-        { code: tvCode, cookie_id: cookie.id, cookie_source: 'admin' },
+        { code: tvCode, cookie_id: cookie.id, cookie_source: cookieSource },
         { headers: { Authorization: `Bearer ${token}` } },
       );
       setTvResult(res.data);
@@ -374,8 +382,12 @@ function AdminCookieModal({
   const handleRefreshToken = async () => {
     setTokenRefreshing(true);
     try {
+      const refreshEndpoint =
+        cookieSource === 'admin'
+          ? `${API}/admin/admin-cookies/${cookie.id}/refresh-token`
+          : `${API}/free-cookies/${cookie.id}/refresh-token`;
       const res = await axios.post(
-        `${API}/admin/admin-cookies/${cookie.id}/refresh-token`,
+        refreshEndpoint,
         {},
         { headers: { Authorization: `Bearer ${token}` } },
       );
@@ -417,7 +429,7 @@ function AdminCookieModal({
                 }`}
               />
               <span className="font-mono text-xs text-white/40">
-                ADMIN COOKIE #{index + 1}
+                {sourceLabel} COOKIE #{index + 1}
               </span>
               <Badge
                 className={`${
@@ -427,6 +439,9 @@ function AdminCookieModal({
                 } border text-[10px] font-mono px-1.5`}
               >
                 {isAlive ? 'ALIVE' : 'DEAD'}
+              </Badge>
+              <Badge className="bg-blue-500/20 text-blue-300 border border-blue-500/30 text-[10px] font-mono px-1.5">
+                {sourceLabel}
               </Badge>
               {isInFreeCookies && (
                 <Badge className="bg-green-500/20 text-green-400 border border-green-500/30 text-[10px] font-mono px-1.5">
@@ -745,10 +760,7 @@ export default function AdminCookiesPage() {
     setFavoritesLoading(true);
     try {
       const res = await axios.get(`${API}/favorites`, { headers });
-      const adminOnly = (res.data.cookies || []).filter(
-        (c: any) => c.source === 'admin',
-      );
-      setFavoriteCookies(adminOnly);
+      setFavoriteCookies(res.data.cookies || []);
       setPage(1);
     } catch {
       toast.error('Failed to load favorites');
@@ -831,18 +843,46 @@ export default function AdminCookiesPage() {
     }
   };
 
-  const deleteCookie = async (cookieId: string) => {
+  const deleteCookie = async (cookieToDelete: any) => {
+    const cookieId =
+      typeof cookieToDelete === 'string' ? cookieToDelete : cookieToDelete?.id;
+    const cookieSource =
+      typeof cookieToDelete === 'object' && cookieToDelete?.source === 'free'
+        ? 'free'
+        : 'admin';
+    const normalizedSource = cookieSource;
+    const endpoint =
+      cookieSource === 'admin'
+        ? `${API}/admin/admin-cookies/${cookieId}`
+        : `${API}/admin/free-cookies/${cookieId}`;
+
     try {
-      await axios.delete(`${API}/admin/admin-cookies/${cookieId}`, {
+      await axios.delete(endpoint, {
         headers,
       });
       setCookies(prev => prev.filter(c => c.id !== cookieId));
-      setFavoriteCookies(prev => prev.filter(c => c.id !== cookieId));
+      setFavoriteCookies(prev =>
+        prev.filter(
+          c =>
+            !(
+              c.id === cookieId &&
+              (c.source === 'free' ? 'free' : 'admin') === normalizedSource
+            ),
+        ),
+      );
       const newIds = new Set(favoriteIds);
       newIds.delete(cookieId);
       setFavoriteIds(newIds);
-      if (selectedCookie?.id === cookieId) setSelectedCookie(null);
-      toast.success('Admin cookie removed');
+      if (
+        selectedCookie?.id === cookieId &&
+        (selectedCookie?.source === 'free' ? 'free' : 'admin') ===
+          normalizedSource
+      ) {
+        setSelectedCookie(null);
+      }
+      toast.success(
+        cookieSource === 'admin' ? 'Admin cookie removed' : 'Free cookie removed',
+      );
     } catch {
       toast.error('Failed to delete');
     }
@@ -881,8 +921,14 @@ export default function AdminCookiesPage() {
     );
   }
 
+  const selectedList = activeTab === 'favorites' ? favoriteCookies : publicCookies;
   const selectedIndex = selectedCookie
-    ? cookies.findIndex(c => c.id === selectedCookie.id)
+    ? selectedList.findIndex(
+        c =>
+          c.id === selectedCookie.id &&
+          (c.source === 'free' ? 'free' : 'admin') ===
+            (selectedCookie.source === 'free' ? 'free' : 'admin'),
+      )
     : -1;
 
   return (
@@ -1014,7 +1060,9 @@ export default function AdminCookiesPage() {
                     isFavorited={true}
                     onDelete={deleteCookie}
                     onToggleFavorite={toggleFavorite}
-                    isInFreeCookies={freeCookieEmails.has(cookie.email)}
+                    isInFreeCookies={
+                      cookie.source === 'free' || freeCookieEmails.has(cookie.email)
+                    }
                     onClick={() => setSelectedCookie(cookie)}
                   />
                 ))}

@@ -163,6 +163,7 @@ function FreeCookieSmallCard({
   isMasterFavoritesView = false,
 }) {
   const isAlive = cookie.is_alive !== false;
+  const sourceLabel = cookie.source === 'admin' ? 'ADMIN' : 'FREE';
   return (
     <motion.div
       data-testid={`free-cookie-card-${globalIndex}`}
@@ -203,6 +204,9 @@ function FreeCookieSmallCard({
           >
             {isAlive ? 'ALIVE' : 'DEAD'}
           </Badge>
+          <Badge className="bg-blue-500/20 text-blue-300 border border-blue-500/30 text-[10px] font-mono px-1.5 py-0">
+            {sourceLabel}
+          </Badge>
 
           {canFavorite && (
             <button
@@ -229,7 +233,7 @@ function FreeCookieSmallCard({
             <button
               onClick={e => {
                 e.stopPropagation();
-                onDelete(cookie.id);
+                onDelete(cookie);
               }}
               className="text-white/15 hover:text-red-400 transition-colors p-1"
               data-testid={`delete-free-cookie-${globalIndex}`}
@@ -293,6 +297,8 @@ function FreeCookieModal({
   const [showBrowserCookies, setShowBrowserCookies] = useState(false);
   const { token } = useAuth();
   const isAlive = cookie.is_alive !== false;
+  const cookieSource = cookie.source === 'admin' ? 'admin' : 'free';
+  const sourceLabel = cookieSource === 'admin' ? 'ADMIN' : 'FREE';
 
   const handleTvCode = async () => {
     if (!tvCode.trim()) {
@@ -304,7 +310,7 @@ function FreeCookieModal({
     try {
       const res = await axios.post(
         `${API}/tv-code`,
-        { code: tvCode, cookie_id: cookie.id, cookie_source: 'free' },
+        { code: tvCode, cookie_id: cookie.id, cookie_source: cookieSource },
         { headers: { Authorization: `Bearer ${token}` } },
       );
       setTvResult(res.data);
@@ -320,8 +326,12 @@ function FreeCookieModal({
   const handleRefreshToken = async () => {
     setTokenRefreshing(true);
     try {
+      const refreshEndpoint =
+        cookieSource === 'admin'
+          ? `${API}/admin/admin-cookies/${cookie.id}/refresh-token`
+          : `${API}/free-cookies/${cookie.id}/refresh-token`;
       const res = await axios.post(
-        `${API}/free-cookies/${cookie.id}/refresh-token`,
+        refreshEndpoint,
         {},
         { headers: { Authorization: `Bearer ${token}` } },
       );
@@ -363,7 +373,7 @@ function FreeCookieModal({
                 }`}
               />
               <span className="font-mono text-xs text-white/40">
-                FREE COOKIE #{globalIndex + 1}
+                {sourceLabel} COOKIE #{globalIndex + 1}
               </span>
               <Badge
                 className={`${
@@ -373,6 +383,9 @@ function FreeCookieModal({
                 } border text-[10px] font-mono px-1.5`}
               >
                 {isAlive ? 'ALIVE' : 'DEAD'}
+              </Badge>
+              <Badge className="bg-blue-500/20 text-blue-300 border border-blue-500/30 text-[10px] font-mono px-1.5">
+                {sourceLabel}
               </Badge>
               {lastRefreshed && (
                 <span className="text-[10px] text-white/15 font-mono flex items-center gap-1">
@@ -758,23 +771,54 @@ export default function FreeCookiesPage() {
     }
   };
 
-  const handleDeleteFreeCookie = async id => {
+  const handleDeleteCookie = async cookieToDelete => {
     if (!isAdmin) return;
-    if (!window.confirm('Delete this free cookie?')) return;
+    const cookieId =
+      typeof cookieToDelete === 'string' ? cookieToDelete : cookieToDelete?.id;
+    const cookieSource =
+      typeof cookieToDelete === 'object' && cookieToDelete?.source === 'admin'
+        ? 'admin'
+        : 'free';
+    const normalizedSource = cookieSource;
+    const sourceLabel = cookieSource === 'admin' ? 'admin' : 'free';
+    const endpoint =
+      cookieSource === 'admin'
+        ? `${API}/admin/admin-cookies/${cookieId}`
+        : `${API}/admin/free-cookies/${cookieId}`;
+
+    if (!window.confirm(`Delete this ${sourceLabel} cookie?`)) return;
     try {
-      await axios.delete(`${API}/admin/free-cookies/${id}`, { headers });
-      toast.success('Free cookie deleted');
-      setCookies(prev => prev.filter(c => c.id !== id));
-      setFavoriteCookiesMaster(prev => prev.filter(c => c.id !== id));
-      setFavoriteCookiesOthers(prev => prev.filter(c => c.id !== id));
+      await axios.delete(endpoint, { headers });
+      toast.success(
+        cookieSource === 'admin' ? 'Admin cookie deleted' : 'Free cookie deleted',
+      );
+      setCookies(prev => prev.filter(c => c.id !== cookieId));
+      setFavoriteCookiesMaster(prev =>
+        prev.filter(
+          c =>
+            !(
+              c.id === cookieId &&
+              (c.source === 'admin' ? 'admin' : 'free') === normalizedSource
+            ),
+        ),
+      );
+      setFavoriteCookiesOthers(prev =>
+        prev.filter(
+          c =>
+            !(
+              c.id === cookieId &&
+              (c.source === 'admin' ? 'admin' : 'free') === normalizedSource
+            ),
+        ),
+      );
       setFavoriteIds(prev => {
         const n = new Set(prev);
-        n.delete(id);
+        n.delete(cookieId);
         return n;
       });
     } catch (err) {
       toast.error(
-        err.response?.data?.detail || 'Failed to delete free cookie',
+        err.response?.data?.detail || 'Failed to delete cookie',
       );
     }
   };
@@ -794,9 +838,10 @@ export default function FreeCookiesPage() {
     setFavoritesLoading(true);
     try {
       const res = await axios.get(`${API}/favorites`, { headers });
-      const all = (res.data.cookies || []).filter(
-        c => !c.source || c.source === 'free',
-      );
+      const all = (res.data.cookies || []).map(c => ({
+        ...c,
+        source: c.source === 'admin' ? 'admin' : 'free',
+      }));
 
       if (isAdmin) {
         const myId = user?.id;
@@ -1048,7 +1093,7 @@ export default function FreeCookiesPage() {
                 <Star className="w-10 h-10 mx-auto mb-2 text-white/20" />
                 <p>No favorites yet.</p>
                 <p className="text-xs text-white/30 mt-1">
-                  Tap the star on any free cookie to add it here.
+                  Tap the star on any cookie to add it here.
                 </p>
               </div>
             ) : (
@@ -1061,7 +1106,7 @@ export default function FreeCookiesPage() {
                     isAdmin={isAdmin}
                     canFavorite={canFavorite}
                     isFavorited={favoriteIds.has(cookie.id)}
-                    onDelete={handleDeleteFreeCookie}
+                    onDelete={handleDeleteCookie}
                     onClick={() => {
                       setSelectedCookie(cookie);
                       setSelectedGlobalIndex(idx);
@@ -1091,7 +1136,7 @@ export default function FreeCookiesPage() {
                       isAdmin={isAdmin}
                       canFavorite={canFavorite}
                       isFavorited={favoriteIds.has(cookie.id)}
-                      onDelete={handleDeleteFreeCookie}
+                      onDelete={handleDeleteCookie}
                       onClick={() => {
                         setSelectedCookie(cookie);
                         setSelectedGlobalIndex(idx);
@@ -1123,7 +1168,7 @@ export default function FreeCookiesPage() {
                       isAdmin={isAdmin}
                       canFavorite={canFavorite}
                       isFavorited={favoriteIds.has(cookie.id)}
-                      onDelete={handleDeleteFreeCookie}
+                      onDelete={handleDeleteCookie}
                       onClick={() => {
                         setSelectedCookie(cookie);
                         setSelectedGlobalIndex(idx);
@@ -1162,7 +1207,7 @@ export default function FreeCookiesPage() {
                   isAdmin={isAdmin}
                   canFavorite={canFavorite}
                   isFavorited={favoriteIds.has(cookie.id)}
-                  onDelete={handleDeleteFreeCookie}
+                  onDelete={handleDeleteCookie}
                   onClick={() => {
                     setSelectedCookie(cookie);
                     setSelectedGlobalIndex(
