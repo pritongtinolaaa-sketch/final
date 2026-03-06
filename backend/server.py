@@ -26,7 +26,6 @@ db = client[os.environ['DB_NAME']]
 
 JWT_SECRET = os.environ['JWT_SECRET']
 JWT_ALGORITHM = "HS256"
-SESSION_TTL_DAYS = 7
 
 app = FastAPI()
 api_router = APIRouter(prefix="/api")
@@ -97,27 +96,18 @@ async def get_current_user(authorization: str = Header(None)):
     token_str = authorization.split(" ")[1]
     try:
         payload = jwt.decode(token_str, JWT_SECRET, algorithms=[JWT_ALGORITHM])
-        session_id = payload.get("session_id")
-        if not session_id:
-            raise HTTPException(status_code=401, detail="Invalid token")
-
-        key_doc = await db.access_keys.find_one(
-            {"id": payload["key_id"], "active_sessions.session_id": session_id},
-            {"_id": 0, "id": 1, "label": 1, "is_master": 1, "tier": 1, "expires_at": 1},
-        )
+        key_doc = await db.access_keys.find_one({"id": payload["key_id"]}, {"_id": 0})
         if not key_doc:
-            key_exists = await db.access_keys.find_one(
-                {"id": payload["key_id"]},
-                {"_id": 1},
-            )
-            if not key_exists:
-                raise HTTPException(status_code=401, detail="Key not found")
-            raise HTTPException(status_code=401, detail="Session revoked")
+            raise HTTPException(status_code=401, detail="Key not found")
         expires_at = key_doc.get("expires_at")
         if expires_at:
             expiry = datetime.fromisoformat(expires_at).replace(tzinfo=timezone.utc)
             if datetime.now(timezone.utc) > expiry:
                 raise HTTPException(status_code=401, detail="Access key has expired")
+        session_id = payload.get("session_id")
+        active = key_doc.get("active_sessions", [])
+        if not any(s["session_id"] == session_id for s in active):
+            raise HTTPException(status_code=401, detail="Session revoked")
         return {
             "id": key_doc["id"],
             "label": key_doc["label"],
@@ -723,18 +713,7 @@ async def ping():
 # --- Auth Routes ---
 @api_router.post("/auth/login")
 async def login(data: KeyLogin):
-    key_doc = await db.access_keys.find_one(
-        {"key_value": data.key},
-        {
-            "_id": 0,
-            "id": 1,
-            "label": 1,
-            "is_master": 1,
-            "tier": 1,
-            "expires_at": 1,
-            "max_devices": 1,
-        },
-    )
+    key_doc = await db.access_keys.find_one({"key_value": data.key}, {"_id": 0})
     if not key_doc:
         raise HTTPException(status_code=401, detail="Invalid access key")
     expires_at = key_doc.get("expires_at")
@@ -742,21 +721,8 @@ async def login(data: KeyLogin):
         expiry = datetime.fromisoformat(expires_at).replace(tzinfo=timezone.utc)
         if datetime.now(timezone.utc) > expiry:
             raise HTTPException(status_code=401, detail="Access key has expired")
-
-    # Prune stale sessions (older than JWT TTL) to keep auth docs small and login fast.
-    cutoff = (datetime.now(timezone.utc) - timedelta(days=SESSION_TTL_DAYS)).isoformat()
-    await db.access_keys.update_one(
-        {"id": key_doc["id"]},
-        {"$pull": {"active_sessions": {"created_at": {"$lt": cutoff}}}},
-    )
-
-    active_info = await db.access_keys.aggregate([
-        {"$match": {"id": key_doc["id"]}},
-        {"$project": {"_id": 0, "active_count": {"$size": {"$ifNull": ["$active_sessions", []]}}}},
-    ]).to_list(1)
-    active_count = active_info[0]["active_count"] if active_info else 0
-
-    if active_count >= key_doc.get("max_devices", 1) and not key_doc.get("is_master"):
+    active = key_doc.get("active_sessions", [])
+    if len(active) >= key_doc.get("max_devices", 1) and not key_doc.get("is_master"):
         raise HTTPException(status_code=403, detail=f"Device limit reached ({key_doc['max_devices']})")
     session_id = str(uuid.uuid4())
     token = jwt.encode(
@@ -764,7 +730,7 @@ async def login(data: KeyLogin):
             "key_id": key_doc["id"],
             "session_id": session_id,
             "is_master": key_doc.get("is_master", False),
-            "exp": datetime.now(timezone.utc) + timedelta(days=SESSION_TTL_DAYS)
+            "exp": datetime.now(timezone.utc) + timedelta(days=7)
         },
         JWT_SECRET, algorithm=JWT_ALGORITHM
     )
@@ -1780,14 +1746,6 @@ async def seed_master_key():
     elif existing["key_value"] != master_key:
         await db.access_keys.update_one({"is_master": True}, {"$set": {"key_value": master_key}})
         logger.info("Master key updated")
-
-    # Ensure auth-critical indexes exist for fast login/session validation.
-    await db.access_keys.create_index("key_value")
-    await db.access_keys.create_index("id")
-    await db.access_keys.create_index([("id", 1), ("active_sessions.session_id", 1)])
-    await db.favorites.create_index([("key_id", 1), ("favorited", 1)])
-    await db.favorites.create_index([("cookie_id", 1), ("favorited", 1)])
-
     _refresh_task = asyncio.create_task(refresh_free_cookie_tokens())
     logger.info("NFToken auto-refresh task started (every 10 min)")
 
