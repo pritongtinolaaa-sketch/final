@@ -50,27 +50,8 @@ function InfoRow({ icon, label, value }) {
   );
 }
 
-function FilterBar({ cookies, filters, setFilters }) {
+function FilterBar({ filters, setFilters, planOptions, countryOptions }) {
   const statuses = ['all', 'alive', 'dead'];
-
-  const plans = useMemo(() => {
-    const set = new Set(cookies.map(c => c.plan).filter(Boolean));
-    const order = ['Basic', 'Basic with ads', 'Mobile', 'Standard with ads', 'Standard (HD)', 'Premium (UHD)'];
-    const sorted = Array.from(set).sort((a, b) => {
-      const ai = order.findIndex(o => a.includes(o.split(' ')[0]));
-      const bi = order.findIndex(o => b.includes(o.split(' ')[0]));
-      if (ai === -1 && bi === -1) return a.localeCompare(b);
-      if (ai === -1) return 1;
-      if (bi === -1) return -1;
-      return ai - bi;
-    });
-    return ['all', ...sorted];
-  }, [cookies]);
-
-  const countries = useMemo(() => {
-    const set = new Set(cookies.map(c => c.country).filter(Boolean));
-    return ['all', ...Array.from(set).sort()];
-  }, [cookies]);
 
   const selectClass = "bg-black/50 border border-white/10 text-white/60 text-xs rounded-lg px-3 h-8 outline-none focus:border-green-500/40 cursor-pointer hover:border-white/20 transition-colors";
 
@@ -104,7 +85,7 @@ function FilterBar({ cookies, filters, setFilters }) {
         onChange={e => setFilters(f => ({ ...f, plan: e.target.value }))}
         className={selectClass}
       >
-        {plans.map(p => (
+        {planOptions.map(p => (
           <option key={p} value={p} className="bg-[#111]">{p === 'all' ? 'All Plans' : p}</option>
         ))}
       </select>
@@ -113,7 +94,7 @@ function FilterBar({ cookies, filters, setFilters }) {
         onChange={e => setFilters(f => ({ ...f, country: e.target.value }))}
         className={selectClass}
       >
-        {countries.map(c => (
+        {countryOptions.map(c => (
           <option key={c} value={c} className="bg-[#111]">{c === 'all' ? 'All Countries' : c}</option>
         ))}
       </select>
@@ -147,26 +128,26 @@ function FreeCookieSmallCard({ cookie, globalIndex, isAdmin, onDelete, onClick }
         hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.2),inset_0_-1px_0_rgba(0,0,0,0.5),0_12px_32px_rgba(0,0,0,0.7)]
         active:scale-[0.97]`}
     >
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <div className={`w-2 h-2 rounded-full shrink-0 ${isAlive ? 'bg-green-400 shadow-[0_0_6px_rgba(74,222,128,0.5)]' : 'bg-red-400 shadow-[0_0_6px_rgba(248,113,113,0.5)]'}`} />
-            <span className="font-mono text-xs text-white/30">#{globalIndex + 1}</span>
-           </div>
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <div className={`w-2 h-2 rounded-full shrink-0 ${isAlive ? 'bg-green-400 shadow-[0_0_6px_rgba(74,222,128,0.5)]' : 'bg-red-400 shadow-[0_0_6px_rgba(248,113,113,0.5)]'}`} />
+          <span className="font-mono text-xs text-white/30">#{globalIndex + 1}</span>
+        </div>
 
-          <Badge className={`${isAlive ? 'bg-green-500/20 text-green-400 border-green-500/30' : 'bg-red-500/20 text-red-400 border-red-500/30'} border text-[10px] font-mono px-1.5 py-0`}>
-            {isAlive ? 'ALIVE' : 'DEAD'}
-          </Badge>
+        <Badge className={`${isAlive ? 'bg-green-500/20 text-green-400 border-green-500/30' : 'bg-red-500/20 text-red-400 border-red-500/30'} border text-[10px] font-mono px-1.5 py-0`}>
+          {isAlive ? 'ALIVE' : 'DEAD'}
+        </Badge>
 
-          {isAdmin && (
-            <button
+        {isAdmin && (
+          <button
             onClick={e => { e.stopPropagation(); onDelete(cookie.id); }}
             className="text-white/15 hover:text-red-400 transition-colors p-1"
             data-testid={`delete-free-cookie-${globalIndex}`}
-        >
-          <Trash2 className="w-3.5 h-3.5" />
-        </button>
-      )}
-    </div>
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+          </button>
+        )}
+      </div>
 
       <div className="flex items-center gap-2 mb-1.5">
         <Mail className="w-3.5 h-3.5 text-white/20 shrink-0" />
@@ -396,32 +377,82 @@ export default function FreeCookiesPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
 
+  // ✅ Plan & country options built from ALL fetched cookies across pages
+  const [allPlanOptions, setAllPlanOptions] = useState(['all']);
+  const [allCountryOptions, setAllCountryOptions] = useState(['all']);
+
   const headers = { Authorization: `Bearer ${token}` };
   const isAdmin = user?.is_master === true;
   const isPremium = user?.tier === 'premium' && !isAdmin;
   const pageSize = 20;
 
+  // ✅ Fetch filter options once on mount (unfiltered, just to populate dropdowns)
   useEffect(() => {
     if (!user) return;
-    fetchCookies(page);
-  }, [user, page]); // eslint-disable-line
+    fetchFilterOptions();
+  }, [user]); // eslint-disable-line
 
+  // ✅ Re-fetch cookies whenever page OR filters change
+  useEffect(() => {
+    if (!user) return;
+    fetchCookies(page, filters);
+  }, [user, page, filters]); // eslint-disable-line
+
+  // ✅ Reset to page 1 when filters change
   useEffect(() => {
     setPage(1);
-  }, [filters]);
+  }, [filters.status, filters.plan, filters.country]);
 
-  const fetchCookies = async (currentPage = 1) => {
+  // ✅ Fetch all unique plans & countries for dropdown options (unfiltered)
+  const fetchFilterOptions = async () => {
+    try {
+      const endpoint = isAdmin ? `${API}/admin/free-cookies` : `${API}/free-cookies`;
+      const res = await axios.get(endpoint, {
+        headers,
+        params: { page: 1, page_size: 500, status: 'all', plan: '', country: '' }
+      });
+      const all = res.data.cookies || [];
+
+      const planOrder = ['Basic', 'Basic with ads', 'Mobile', 'Standard with ads', 'Standard (HD)', 'Premium (UHD)'];
+      const planSet = new Set(all.map(c => c.plan).filter(Boolean));
+      const sortedPlans = Array.from(planSet).sort((a, b) => {
+        const ai = planOrder.findIndex(o => a.includes(o.split(' ')[0]));
+        const bi = planOrder.findIndex(o => b.includes(o.split(' ')[0]));
+        if (ai === -1 && bi === -1) return a.localeCompare(b);
+        if (ai === -1) return 1;
+        if (bi === -1) return -1;
+        return ai - bi;
+      });
+      setAllPlanOptions(['all', ...sortedPlans]);
+
+      const countrySet = new Set(all.map(c => c.country).filter(Boolean));
+      setAllCountryOptions(['all', ...Array.from(countrySet).sort()]);
+    } catch {
+      // silently fail — dropdowns will just show "all"
+    }
+  };
+
+  // ✅ fetchCookies now sends status, plan, country to backend
+  const fetchCookies = async (currentPage = 1, currentFilters = filters) => {
     setLoading(true);
     try {
+      const params = {
+        page: currentPage,
+        page_size: pageSize,
+        status: currentFilters.status,
+        plan: currentFilters.plan === 'all' ? '' : currentFilters.plan,
+        country: currentFilters.country === 'all' ? '' : currentFilters.country,
+      };
+
       if (isAdmin) {
-        const res = await axios.get(`${API}/admin/free-cookies`, { headers, params: { page: currentPage, page_size: pageSize } });
+        const res = await axios.get(`${API}/admin/free-cookies`, { headers, params });
         setCookies(res.data.cookies);
         setTotalPages(res.data.total_pages);
         setTotal(res.data.total);
         setDisplayLimit(res.data.display_limit);
         setLimitInput(String(res.data.display_limit));
       } else {
-        const res = await axios.get(`${API}/free-cookies`, { headers, params: { page: currentPage, page_size: pageSize } });
+        const res = await axios.get(`${API}/free-cookies`, { headers, params });
         setCookies(res.data.cookies);
         setTotalPages(res.data.total_pages);
         setTotal(res.data.total);
@@ -464,23 +495,14 @@ export default function FreeCookiesPage() {
     try {
       const res = await axios.post(`${API}/admin/free-cookies/refresh`, {}, { headers });
       toast.success(res.data.message);
-      fetchCookies(page);
+      fetchCookies(page, filters);
+      fetchFilterOptions();
     } catch {
       toast.error('Failed to refresh tokens');
     } finally {
       setRefreshing(false);
     }
   };
-
-  const filteredCookies = useMemo(() => {
-    return cookies.filter(c => {
-      if (filters.status === 'alive' && c.is_alive === false) return false;
-      if (filters.status === 'dead' && c.is_alive !== false) return false;
-      if (filters.plan !== 'all' && c.plan !== filters.plan) return false;
-      if (filters.country !== 'all' && c.country !== filters.country) return false;
-      return true;
-    });
-  }, [cookies, filters]);
 
   const getGlobalIndex = (localIdx) => (page - 1) * pageSize + localIdx;
 
@@ -633,7 +655,7 @@ export default function FreeCookiesPage() {
           <div className="text-center py-20">
             <Loader2 className="w-8 h-8 text-primary animate-spin mx-auto" />
           </div>
-        ) : total === 0 ? (
+        ) : total === 0 && filters.status === 'all' && !filters.plan && !filters.country ? (
           <div className="text-center py-20 text-white/30">
             <Gift className="w-12 h-12 mx-auto mb-3 text-white/10" />
             <p>No free cookies available</p>
@@ -642,9 +664,14 @@ export default function FreeCookiesPage() {
           </div>
         ) : (
           <>
-            <FilterBar cookies={cookies} filters={filters} setFilters={setFilters} />
+            <FilterBar
+              filters={filters}
+              setFilters={setFilters}
+              planOptions={allPlanOptions}
+              countryOptions={allCountryOptions}
+            />
 
-            {filteredCookies.length === 0 ? (
+            {cookies.length === 0 ? (
               <div className="text-center py-16 text-white/30">
                 <Filter className="w-10 h-10 mx-auto mb-3 text-white/10" />
                 <p>No cookies match your filters</p>
@@ -654,7 +681,7 @@ export default function FreeCookiesPage() {
               </div>
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-                {filteredCookies.map((cookie, idx) => (
+                {cookies.map((cookie, idx) => (
                   <FreeCookieSmallCard
                     key={cookie.id}
                     cookie={cookie}
