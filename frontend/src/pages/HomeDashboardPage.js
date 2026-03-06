@@ -89,49 +89,51 @@ export default function HomeDashboardPage() {
       <div className="max-w-5xl mx-auto px-6 py-4 md:py-6">
         <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }}>
           <div className="rounded-2xl p-6 md:p-8 bg-gradient-to-b from-white/10 to-white/[0.03] border border-white/20 shadow-[inset_0_1px_0_rgba(255,255,255,0.15),0_8px_24px_rgba(0,0,0,0.6)]">
-            <h1 className="text-3xl sm:text-4xl font-sans font-semibold normal-case tracking-normal text-white">
-              Hi, <span className="text-primary">{greetingName}</span>!
-            </h1>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
+              <div className="flex flex-col">
+                <h1 className="text-3xl sm:text-4xl font-sans font-semibold normal-case tracking-normal text-white">
+                  Hi, <span className="text-primary">{greetingName}</span>!
+                </h1>
 
-            <div className="mt-4 flex items-center gap-3">
-              <span className="text-white/50 text-sm font-mono">Current tier:</span>
-              {isMaster ? (
-                <Badge className="text-[10px] font-mono bg-amber-300 text-amber-950 border border-yellow-100/90 shadow-[0_0_10px_rgba(251,191,36,0.55)]">
-                  MASTER
-                </Badge>
-              ) : isPremium ? (
-                <Badge className="text-[10px] font-mono bg-purple-600/35 text-purple-200 border border-purple-300/40">
-                  PREMIUM
-                </Badge>
-              ) : (
-                <Badge className="text-[10px] font-mono bg-white/10 text-white/50 border border-white/15">
-                  FREE
-                </Badge>
-              )}
-              <span className="text-xs text-white/30 font-mono">{tierLabel}</span>
-            </div>
+                <div className="mt-4 flex items-center gap-3">
+                  <span className="text-white/50 text-sm font-mono">Current tier:</span>
+                  {isMaster ? (
+                    <Badge className="text-[10px] font-mono bg-amber-300 text-amber-950 border border-yellow-100/90 shadow-[0_0_10px_rgba(251,191,36,0.55)]">
+                      MASTER
+                    </Badge>
+                  ) : isPremium ? (
+                    <Badge className="text-[10px] font-mono bg-purple-600/35 text-purple-200 border border-purple-300/40">
+                      PREMIUM
+                    </Badge>
+                  ) : (
+                    <Badge className="text-[10px] font-mono bg-white/10 text-white/50 border border-white/15">
+                      FREE
+                    </Badge>
+                  )}
+                  <span className="text-xs text-white/30 font-mono">{tierLabel}</span>
+                </div>
 
-            <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="rounded-xl border border-green-500/20 bg-green-500/5 p-5">
-                <div className="flex items-center gap-2 text-green-400 mb-2">
-                  <Cookie className="w-4 h-4" />
-                  <span className="text-xs font-mono uppercase tracking-wide">
-                    Current number of all cookies
-                  </span>
+                <div className="mt-8 rounded-xl border border-green-500/20 bg-green-500/5 p-5">
+                  <div className="flex items-center gap-2 text-green-400 mb-2">
+                    <Cookie className="w-4 h-4" />
+                    <span className="text-xs font-mono uppercase tracking-wide">
+                      Current number of all cookies
+                    </span>
+                  </div>
+                  <div className="font-bebas text-4xl tracking-wider text-white">
+                    {loading ? '...' : counts.total}
+                  </div>
+                  {!loading && (
+                    <p className="text-xs text-white/35 mt-1 font-mono">
+                      Free: {counts.free} {canAccessAdmin ? `| Admin: ${counts.admin}` : ''}
+                    </p>
+                  )}
                 </div>
-                <div className="font-bebas text-4xl tracking-wider text-white">
-                  {loading ? '...' : counts.total}
-                </div>
-                {!loading && (
-                  <p className="text-xs text-white/35 mt-1 font-mono">
-                    Free: {counts.free} {canAccessAdmin ? `| Admin: ${counts.admin}` : ''}
-                  </p>
-                )}
               </div>
 
-              <div className="rounded-xl p-4 bg-gradient-to-b from-white/10 to-white/[0.03] border border-white/15 shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="font-bebas tracking-widest text-primary text-xl">
+              <div className="rounded-xl p-5 border border-primary/35 bg-gradient-to-b from-primary/12 to-white/[0.02] shadow-[0_0_20px_rgba(229,9,20,0.2),inset_0_1px_0_rgba(255,255,255,0.2)] h-full min-h-[250px] flex flex-col">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="font-bebas tracking-widest text-primary text-2xl drop-shadow-[0_0_8px_rgba(229,9,20,0.35)]">
                     ADMIN NOTICE
                   </span>
                   {isMaster &&
@@ -151,17 +153,20 @@ export default function HomeDashboardPage() {
                       </button>
                     ))}
                 </div>
+
                 {isMaster && isEditingNotice ? (
                   <textarea
                     value={noticeText}
                     onChange={e => setNoticeText(e.target.value)}
-                    className="w-full h-24 bg-black/80 border border-white/10 rounded-xl text-xs text-white/70 p-2 resize-none focus:border-primary focus:outline-none font-mono"
+                    className="w-full flex-1 min-h-[170px] bg-black/80 border border-white/10 rounded-xl text-xs text-white/70 p-3 resize-none focus:border-primary focus:outline-none font-mono text-center"
                     placeholder="Type your notice here..."
                   />
                 ) : (
-                  <p className="text-white/50 text-xs font-mono whitespace-pre-wrap">
-                    {noticeText || 'No notice posted.'}
-                  </p>
+                  <div className="flex-1 flex items-center justify-center">
+                    <p className="text-white/75 text-sm font-mono whitespace-pre-wrap text-center leading-relaxed">
+                      {noticeText || 'No notice posted.'}
+                    </p>
+                  </div>
                 )}
               </div>
             </div>
