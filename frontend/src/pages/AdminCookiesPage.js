@@ -31,8 +31,25 @@ import axios from 'axios';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
-function CopyBtn({ text, testId }: { text: string; testId?: string }) {
+function stableIndexFromId(id) {
+  const str = String(id || '');
+  let hash = 0;
+  for (let i = 0; i < str.length; i += 1) {
+    hash = (hash * 31 + str.charCodeAt(i)) % 100000;
+  }
+  return hash;
+}
+
+function normalizeHiddenBy(hiddenBy) {
+  if (!hiddenBy) return [];
+  if (Array.isArray(hiddenBy)) return hiddenBy.filter(Boolean);
+  if (typeof hiddenBy === 'string') return [hiddenBy];
+  return [];
+}
+
+function CopyBtn({ text, testId }) {
   const [copied, setCopied] = useState(false);
+
   const handleCopy = async () => {
     try {
       await navigator.clipboard.writeText(text);
@@ -46,10 +63,12 @@ function CopyBtn({ text, testId }: { text: string; testId?: string }) {
       document.execCommand('copy');
       document.body.removeChild(ta);
     }
+
     setCopied(true);
     toast.success('Copied');
     setTimeout(() => setCopied(false), 2000);
   };
+
   return (
     <button
       onClick={handleCopy}
@@ -65,16 +84,9 @@ function CopyBtn({ text, testId }: { text: string; testId?: string }) {
   );
 }
 
-function InfoRow({
-  icon,
-  label,
-  value,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value?: string | null;
-}) {
+function InfoRow({ icon, label, value }) {
   if (!value) return null;
+
   return (
     <div className="flex items-center gap-3">
       <span className="text-white/20">{icon}</span>
@@ -88,15 +100,7 @@ function InfoRow({
   );
 }
 
-function FilterBar({
-  cookies,
-  filters,
-  setFilters,
-}: {
-  cookies: any[];
-  filters: { status: string; plan: string; country: string };
-  setFilters: (f: { status: string; plan: string; country: string }) => void;
-}) {
+function FilterBar({ cookies, filters, setFilters }) {
   const statuses = ['all', 'alive', 'dead'];
 
   const plans = useMemo(() => {
@@ -109,14 +113,21 @@ function FilterBar({
       'Standard HD',
       'Premium UHD',
     ];
+
     const sorted = Array.from(set).sort((a, b) => {
-      const ai = order.findIndex(o => a.toLowerCase().includes(o.split(' ')[0].toLowerCase()));
-      const bi = order.findIndex(o => b.toLowerCase().includes(o.split(' ')[0].toLowerCase()));
+      const ai = order.findIndex(o =>
+        a.toLowerCase().includes(o.split(' ')[0].toLowerCase()),
+      );
+      const bi = order.findIndex(o =>
+        b.toLowerCase().includes(o.split(' ')[0].toLowerCase()),
+      );
+
       if (ai === -1 && bi === -1) return a.localeCompare(b);
       if (ai === -1) return 1;
       if (bi === -1) return -1;
       return ai - bi;
     });
+
     return ['all', ...sorted];
   }, [cookies]);
 
@@ -136,6 +147,7 @@ function FilterBar({
           Filter
         </span>
       </div>
+
       <div className="flex items-center gap-1">
         {statuses.map(s => (
           <button
@@ -155,6 +167,7 @@ function FilterBar({
           </button>
         ))}
       </div>
+
       <select
         value={filters.plan}
         onChange={e => setFilters({ ...filters, plan: e.target.value })}
@@ -166,6 +179,7 @@ function FilterBar({
           </option>
         ))}
       </select>
+
       <select
         value={filters.country}
         onChange={e => setFilters({ ...filters, country: e.target.value })}
@@ -177,6 +191,7 @@ function FilterBar({
           </option>
         ))}
       </select>
+
       {(filters.status !== 'all' ||
         filters.plan !== 'all' ||
         filters.country !== 'all') && (
@@ -205,26 +220,15 @@ function AdminCookieSmallCard({
   onToggleFavorite,
   isMasterFavoritesView = false,
   showSourceBadge = false,
-}: {
-  cookie: any;
-  index: number;
-  onDelete: (cookie: any) => void;
-  onClick: () => void;
-  isInFreeCookies: boolean;
-  isAdmin: boolean;
-  canFavorite: boolean;
-  isFavorited: boolean;
-  onToggleFavorite: (id: string) => void;
-  isMasterFavoritesView?: boolean;
-  showSourceBadge?: boolean;
 }) {
   const isAlive = cookie.is_alive !== false;
   const sourceLabel = cookie.source === 'free' ? 'FREE' : 'ADMIN';
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: (index % 21) * 0.04 }}
+      transition={{ delay: (Number(index) % 21) * 0.04 }}
       onClick={onClick}
       className={`group cursor-pointer rounded-xl p-4 transition-all duration-150
         bg-gradient-to-b from-purple-500/10 to-white/[0.03]
@@ -244,7 +248,7 @@ function AdminCookieSmallCard({
             }`}
           />
           <span className="font-mono text-xs text-white/30">
-            #{index + 1}
+            #{Number(index) + 1}
           </span>
           <Badge
             className={`${
@@ -266,6 +270,7 @@ function AdminCookieSmallCard({
             </Badge>
           )}
         </div>
+
         <div className="flex items-center gap-1">
           {canFavorite && (
             <button
@@ -286,6 +291,7 @@ function AdminCookieSmallCard({
               />
             </button>
           )}
+
           {isAdmin && (
             <button
               onClick={e => {
@@ -306,21 +312,21 @@ function AdminCookieSmallCard({
           {cookie.email || '—'}
         </span>
       </div>
+
       <div className="flex items-center gap-2 mb-1.5">
         <CreditCard className="w-3.5 h-3.5 text-white/20 shrink-0" />
-        <span className="text-white/40 text-xs">
-          {cookie.plan || '—'}
-        </span>
+        <span className="text-white/40 text-xs">{cookie.plan || '—'}</span>
       </div>
+
       <div className="flex items-center gap-2">
         <Globe className="w-3.5 h-3.5 text-white/20 shrink-0" />
-        <span className="text-white/40 text-xs">
-          {cookie.country || '—'}
-        </span>
+        <span className="text-white/40 text-xs">{cookie.country || '—'}</span>
       </div>
+
       <div className="mt-3 pt-2 border-t border-white/5 text-[10px] font-mono text-center tracking-widest text-white/15 group-hover:text-purple-400 transition-colors duration-200">
         TAP TO USE
       </div>
+
       {isMasterFavoritesView && cookie.hidden_by_label && (
         <div className="mt-1 text-[10px] text-white/35 font-mono text-center">
           hidden by: {cookie.hidden_by_label}
@@ -339,15 +345,6 @@ function AdminCookieModal({
   canFavorite,
   isFavorited,
   onToggleFavorite,
-}: {
-  cookie: any;
-  index: number;
-  onClose: () => void;
-  isInFreeCookies: boolean;
-  isAdmin: boolean;
-  canFavorite: boolean;
-  isFavorited: boolean;
-  onToggleFavorite: (id: string) => void;
 }) {
   const [tvCode, setTvCode] = useState('');
   const [tvLoading, setTvLoading] = useState(false);
@@ -361,6 +358,7 @@ function AdminCookieModal({
   const [showCookie, setShowCookie] = useState(false);
   const [showBrowserCookies, setShowBrowserCookies] = useState(false);
   const { token } = useAuth();
+
   const isAlive = cookie.is_alive !== false;
   const cookieSource = cookie.source === 'free' ? 'free' : 'admin';
   const sourceLabel = cookieSource === 'free' ? 'FREE' : 'ADMIN';
@@ -370,8 +368,10 @@ function AdminCookieModal({
       toast.error('Enter the code from your TV');
       return;
     }
+
     setTvLoading(true);
     setTvResult(null);
+
     try {
       const res = await axios.post(
         `${API}/tv-code`,
@@ -395,11 +395,13 @@ function AdminCookieModal({
         cookieSource === 'admin'
           ? `${API}/admin/admin-cookies/${cookie.id}/refresh-token`
           : `${API}/free-cookies/${cookie.id}/refresh-token`;
+
       const res = await axios.post(
         refreshEndpoint,
         {},
         { headers: { Authorization: `Bearer ${token}` } },
       );
+
       setCurrentNftoken(res.data.nftoken);
       setCurrentNftokenLink(res.data.nftoken_link);
       setLastRefreshed(new Date().toISOString());
@@ -464,6 +466,7 @@ function AdminCookieModal({
                 </span>
               )}
             </div>
+
             <div className="flex items-center gap-2">
               {canFavorite && (
                 <button
@@ -486,6 +489,7 @@ function AdminCookieModal({
                   />
                 </button>
               )}
+
               <button
                 onClick={onClose}
                 className="text-white/30 hover:text-white transition-colors p-1"
@@ -555,12 +559,14 @@ function AdminCookieModal({
                     </span>
                   </button>
                 </div>
+
                 <div className="flex items-center gap-2">
                   <code className="flex-1 font-mono text-xs text-purple-400/80 bg-black/40 px-3 py-2 rounded-lg truncate">
                     {currentNftoken}
                   </code>
                   <CopyBtn text={currentNftoken} />
                 </div>
+
                 {currentNftokenLink && (
                   <div className="flex flex-col sm:flex-row gap-2 pt-1">
                     <a
@@ -594,6 +600,7 @@ function AdminCookieModal({
                     Sign In on TV
                   </span>
                 </div>
+
                 <div className="flex items-center gap-2">
                   <input
                     value={tvCode}
@@ -618,6 +625,7 @@ function AdminCookieModal({
                     )}
                   </button>
                 </div>
+
                 {tvResult && (
                   <div
                     className={`mt-2 text-xs px-3 py-2 rounded-xl ${
@@ -629,9 +637,10 @@ function AdminCookieModal({
                     {tvResult.message}
                   </div>
                 )}
+
                 <p className="text-[10px] text-white/15 mt-2">
-                  Open Netflix on your TV, select "Sign In" and enter the
-                  8‑digit code shown.
+                  Open Netflix on your TV, select &quot;Sign In&quot; and enter
+                  the 8-digit code shown.
                 </p>
               </div>
             )}
@@ -653,6 +662,7 @@ function AdminCookieModal({
                     ▾
                   </span>
                 </button>
+
                 {showBrowserCookies && (
                   <div className="relative px-5 pb-4">
                     <pre className="text-xs font-mono text-green-400/60 bg-black/60 rounded-xl p-4 overflow-x-auto max-h-40 overflow-y-auto whitespace-pre-wrap break-all">
@@ -683,6 +693,7 @@ function AdminCookieModal({
                     ▾
                   </span>
                 </button>
+
                 {showCookie && (
                   <div className="relative px-5 pb-4">
                     <pre className="text-xs font-mono text-white/40 bg-black/60 rounded-xl p-4 overflow-x-auto max-h-40 overflow-y-auto whitespace-pre-wrap break-all">
@@ -704,10 +715,9 @@ function AdminCookieModal({
 
 export default function AdminCookiesPage() {
   const { token, user } = useAuth();
+
   const [cookies, setCookies] = useState([]);
-  const [freeCookieEmails, setFreeCookieEmails] = useState(
-    new Set(),
-  );
+  const [freeCookieEmails, setFreeCookieEmails] = useState(new Set());
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [selectedCookie, setSelectedCookie] = useState(null);
@@ -740,14 +750,16 @@ export default function AdminCookiesPage() {
         headers,
       });
       setCookies(adminRes.data.cookies || []);
+
       if (isAdmin) {
         const freeRes = await axios.get(`${API}/admin/free-cookies`, {
           headers,
         });
         setFreeCookieEmails(
-          new Set((freeRes.data.cookies || []).map((c: any) => c.email)),
+          new Set((freeRes.data.cookies || []).map(c => c.email)),
         );
       }
+
       setPage(1);
     } catch {
       toast.error('Failed to load admin cookies');
@@ -769,22 +781,25 @@ export default function AdminCookiesPage() {
   const fetchFavorites = async () => {
     if (!canFavorite) return;
     setFavoritesLoading(true);
+
     try {
       const res = await axios.get(`${API}/favorites`, { headers });
       const all = (res.data.cookies || []).map(c => ({
         ...c,
         source: c.source === 'free' ? 'free' : 'admin',
       }));
+
       if (isAdmin) {
-        const myId = user?.id;
-        const mine = all.filter(c => c.hidden_by === myId);
-        const others = all.filter(c => c.hidden_by && c.hidden_by !== myId);
+        const mine = all.filter(c => c.is_mine === true);
+        const others = all.filter(c => c.is_mine !== true);
+
         setFavoriteCookiesMaster(mine);
         setFavoriteCookiesOthers(others);
       } else {
         setFavoriteCookiesMaster(all);
         setFavoriteCookiesOthers([]);
       }
+
       setPage(1);
     } catch {
       toast.error('Failed to load favorites');
@@ -806,34 +821,28 @@ export default function AdminCookiesPage() {
   }, [activeTab]); // eslint-disable-line
 
   const filteredCookies = useMemo(() => {
-  return cookies.filter(c => {
-    if (filters.status === 'alive' && c.is_alive === false) return false;
-    if (filters.status === 'dead' && c.is_alive !== false) return false;
-    if (filters.plan !== 'all' && c.plan !== filters.plan) return false;
-    if (filters.country !== 'all' && c.country !== filters.country)
-      return false;
-    return true;
-  });
-}, [cookies, filters]);
+    return cookies.filter(c => {
+      if (filters.status === 'alive' && c.is_alive === false) return false;
+      if (filters.status === 'dead' && c.is_alive !== false) return false;
+      if (filters.plan !== 'all' && c.plan !== filters.plan) return false;
+      if (filters.country !== 'all' && c.country !== filters.country)
+        return false;
+      return true;
+    });
+  }, [cookies, filters]);
 
-  // Hide cookies hidden by other keys from All tab for premium (master sees all)
   const publicCookies = useMemo(() => {
-    // Master key: see everything
     if (isAdmin) return filteredCookies;
 
-    // Premium: hide cookies whose hidden_by contains any other key
     return filteredCookies.filter(c => {
-      const hiddenBy = new Set((c.hidden_by || []));
+      const hiddenBy = normalizeHiddenBy(c.hidden_by);
 
-      // nobody hid it -> visible
-      if (hiddenBy.size === 0) return true;
+      if (hiddenBy.length === 0) return true;
 
-      // if there is any hider that is not me -> hide
-      if (user?.id && (hiddenBy.size > 1 || !hiddenBy.has(user.id))) {
+      if (user?.id && hiddenBy.some(id => id !== user.id)) {
         return false;
       }
 
-      // hidden only by me -> still show
       return true;
     });
   }, [filteredCookies, isAdmin, user?.id]);
@@ -869,6 +878,7 @@ export default function AdminCookiesPage() {
           ? [...favoriteCookiesMaster, ...favoriteCookiesOthers]
           : favoriteCookiesMaster
         : publicCookies;
+
     const start = (page - 1) * pageSize;
     return list.slice(start, start + pageSize);
   }, [
@@ -881,11 +891,12 @@ export default function AdminCookiesPage() {
     pageSize,
   ]);
 
-  const toggleFavorite = async (cookieId: string) => {
+  const toggleFavorite = async cookieId => {
     if (!canFavorite) {
       toast.error('Favorites are only for premium and master keys');
       return;
     }
+
     const isAlready = favoriteIds.has(cookieId);
     if (!isAdmin && !isAlready && favoriteIds.size >= 10) {
       toast.error('Premium keys can only favorite up to 10 cookies');
@@ -898,25 +909,29 @@ export default function AdminCookiesPage() {
         {},
         { headers },
       );
+
       const newIds = new Set(favoriteIds);
+
       if (res.data.favorited) {
         newIds.add(cookieId);
         toast.success('Added to favorites ★');
       } else {
         newIds.delete(cookieId);
         toast.success('Removed from favorites');
-        if (activeTab === 'favorites') {
-          setFavoriteCookiesMaster(prev => prev.filter(c => c.id !== cookieId));
-          setFavoriteCookiesOthers(prev => prev.filter(c => c.id !== cookieId));
-        }
       }
+
       setFavoriteIds(newIds);
-    } catch {
-      toast.error('Failed to update favorites');
+
+      await fetchAll();
+      if (activeTab === 'favorites') {
+        await fetchFavorites();
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to update favorites');
     }
   };
 
-  const deleteCookie = async (cookieToDelete: any) => {
+  const deleteCookie = async cookieToDelete => {
     const cookieId =
       typeof cookieToDelete === 'string' ? cookieToDelete : cookieToDelete?.id;
     const cookieSource =
@@ -924,15 +939,15 @@ export default function AdminCookiesPage() {
         ? 'free'
         : 'admin';
     const normalizedSource = cookieSource;
+
     const endpoint =
       cookieSource === 'admin'
         ? `${API}/admin/admin-cookies/${cookieId}`
         : `${API}/admin/free-cookies/${cookieId}`;
 
     try {
-      await axios.delete(endpoint, {
-        headers,
-      });
+      await axios.delete(endpoint, { headers });
+
       setCookies(prev => prev.filter(c => c.id !== cookieId));
       setFavoriteCookiesMaster(prev =>
         prev.filter(
@@ -952,9 +967,11 @@ export default function AdminCookiesPage() {
             ),
         ),
       );
+
       const newIds = new Set(favoriteIds);
       newIds.delete(cookieId);
       setFavoriteIds(newIds);
+
       if (
         selectedCookie?.id === cookieId &&
         (selectedCookie?.source === 'free' ? 'free' : 'admin') ===
@@ -962,8 +979,11 @@ export default function AdminCookiesPage() {
       ) {
         setSelectedCookie(null);
       }
+
       toast.success(
-        cookieSource === 'admin' ? 'Admin cookie removed' : 'Free cookie removed',
+        cookieSource === 'admin'
+          ? 'Admin cookie removed'
+          : 'Free cookie removed',
       );
     } catch {
       toast.error('Failed to delete');
@@ -992,9 +1012,7 @@ export default function AdminCookiesPage() {
       <div className="min-h-screen bg-[#050505] flex items-center justify-center">
         <div className="text-center">
           <ShieldCheck className="w-12 h-12 mx-auto mb-3 text-white/10" />
-          <p className="text-white/30 font-mono">
-            Premium access required.
-          </p>
+          <p className="text-white/30 font-mono">Premium access required.</p>
           <p className="text-white/15 text-xs mt-1 font-mono">
             Upgrade your key to access admin cookies.
           </p>
@@ -1006,8 +1024,10 @@ export default function AdminCookiesPage() {
   const favoriteList = isAdmin
     ? [...favoriteCookiesMaster, ...favoriteCookiesOthers]
     : favoriteCookiesMaster;
+
   const selectedList =
     activeTab === 'favorites' ? favoriteList : publicCookies;
+
   const selectedIndex = selectedCookie
     ? selectedList.findIndex(
         c =>
@@ -1020,10 +1040,7 @@ export default function AdminCookiesPage() {
   return (
     <div className="min-h-screen bg-[#050505]">
       <div className="max-w-5xl mx-auto px-6 py-6 md:py-10">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-        >
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
           <div className="flex items-center justify-between mb-10">
             <div className="flex items-center gap-4">
               <ShieldCheck className="w-7 h-7 text-purple-400" />
@@ -1053,6 +1070,7 @@ export default function AdminCookiesPage() {
           >
             <ShieldCheck className="w-3.5 h-3.5" /> All Cookies
           </button>
+
           <button
             onClick={() => {
               setActiveTab('favorites');
@@ -1072,9 +1090,8 @@ export default function AdminCookiesPage() {
             Favorites
             {favoriteIds.size > 0 && (
               <span className="text-[10px] px-1.5 py-0.5 rounded-full font-mono bg-white/10 text-white/40">
-                {[...favoriteIds].filter(id =>
-                  cookies.some(c => c.id === id),
-                ).length || favoriteIds.size}
+                {[...favoriteIds].filter(id => cookies.some(c => c.id === id))
+                  .length || favoriteIds.size}
               </span>
             )}
           </button>
@@ -1144,11 +1161,11 @@ export default function AdminCookiesPage() {
                 </p>
               ) : (
                 <div className="grid grid-cols-3 gap-4 mb-6">
-                  {favoriteCookiesMaster.map((cookie, idx) => (
+                  {favoriteCookiesMaster.map(cookie => (
                     <AdminCookieSmallCard
                       key={`${cookie.source || 'admin'}-${cookie.id}`}
                       cookie={cookie}
-                      index={idx}
+                      index={stableIndexFromId(cookie.id)}
                       isAdmin={isAdmin}
                       canFavorite={canFavorite}
                       isFavorited={favoriteIds.has(cookie.id)}
@@ -1157,7 +1174,8 @@ export default function AdminCookiesPage() {
                       isMasterFavoritesView={true}
                       showSourceBadge={true}
                       isInFreeCookies={
-                        cookie.source === 'free' || freeCookieEmails.has(cookie.email)
+                        cookie.source === 'free' ||
+                        freeCookieEmails.has(cookie.email)
                       }
                       onClick={() => setSelectedCookie(cookie)}
                     />
@@ -1177,11 +1195,11 @@ export default function AdminCookiesPage() {
                 </p>
               ) : (
                 <div className="grid grid-cols-3 gap-4">
-                  {favoriteCookiesOthers.map((cookie, idx) => (
+                  {favoriteCookiesOthers.map(cookie => (
                     <AdminCookieSmallCard
                       key={`${cookie.source || 'admin'}-${cookie.id}`}
                       cookie={cookie}
-                      index={favoriteCookiesMaster.length + idx}
+                      index={stableIndexFromId(cookie.id)}
                       isAdmin={isAdmin}
                       canFavorite={canFavorite}
                       isFavorited={favoriteIds.has(cookie.id)}
@@ -1190,7 +1208,8 @@ export default function AdminCookiesPage() {
                       isMasterFavoritesView={true}
                       showSourceBadge={true}
                       isInFreeCookies={
-                        cookie.source === 'free' || freeCookieEmails.has(cookie.email)
+                        cookie.source === 'free' ||
+                        freeCookieEmails.has(cookie.email)
                       }
                       onClick={() => setSelectedCookie(cookie)}
                     />
@@ -1201,11 +1220,11 @@ export default function AdminCookiesPage() {
           ) : (
             <>
               <div className="grid grid-cols-3 gap-4">
-                {pagedCookies.map((cookie, idx) => (
+                {pagedCookies.map(cookie => (
                   <AdminCookieSmallCard
                     key={cookie.id}
                     cookie={cookie}
-                    index={(page - 1) * pageSize + idx}
+                    index={stableIndexFromId(cookie.id)}
                     isAdmin={isAdmin}
                     canFavorite={canFavorite}
                     isFavorited={true}
@@ -1213,12 +1232,14 @@ export default function AdminCookiesPage() {
                     onToggleFavorite={toggleFavorite}
                     showSourceBadge={true}
                     isInFreeCookies={
-                      cookie.source === 'free' || freeCookieEmails.has(cookie.email)
+                      cookie.source === 'free' ||
+                      freeCookieEmails.has(cookie.email)
                     }
                     onClick={() => setSelectedCookie(cookie)}
                   />
                 ))}
               </div>
+
               {totalPages > 1 && (
                 <div className="flex items-center justify-center gap-3 mt-8">
                   <button
@@ -1281,6 +1302,7 @@ export default function AdminCookiesPage() {
                 setPage(1);
               }}
             />
+
             {publicCookies.length === 0 ? (
               <div className="text-center py-16 text-white/30">
                 <Filter className="w-10 h-10 mx-auto mb-3 text-white/10" />
@@ -1313,6 +1335,7 @@ export default function AdminCookiesPage() {
                     />
                   ))}
                 </div>
+
                 {totalPages > 1 && (
                   <div className="flex items-center justify-center gap-3 mt-8">
                     <button
@@ -1342,9 +1365,7 @@ export default function AdminCookiesPage() {
                     </div>
                     <button
                       disabled={page === totalPages}
-                      onClick={() =>
-                        setPage(p => Math.min(totalPages, p + 1))
-                      }
+                      onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                       className="text-xs text-white/40 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
                     >
                       Next
