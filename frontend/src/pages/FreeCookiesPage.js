@@ -34,6 +34,7 @@ const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 function CopyBtn({ text, testId }) {
   const [copied, setCopied] = useState(false);
+
   const handleCopy = async () => {
     try {
       await navigator.clipboard.writeText(text);
@@ -51,6 +52,7 @@ function CopyBtn({ text, testId }) {
     toast.success('Copied');
     setTimeout(() => setCopied(false), 2000);
   };
+
   return (
     <button
       onClick={handleCopy}
@@ -68,6 +70,7 @@ function CopyBtn({ text, testId }) {
 
 function InfoRow({ icon, label, value }) {
   if (!value) return null;
+
   return (
     <div className="flex items-center gap-3">
       <span className="text-white/20">{icon}</span>
@@ -81,10 +84,16 @@ function InfoRow({ icon, label, value }) {
   );
 }
 
-function FilterBar({ filters, setFilters, planOptions, countryOptions }) {
+function FilterBar({
+  filters,
+  setFilters,
+  planOptions,
+  countryOptions,
+  disabled = false,
+}) {
   const statuses = ['all', 'alive', 'dead'];
   const selectClass =
-    'bg-black/50 border border-white/10 text-white/60 text-xs rounded-lg px-3 h-8 outline-none focus:border-green-500/40 cursor-pointer hover:border-white/20 transition-colors';
+    'bg-black/50 border border-white/10 text-white/60 text-xs rounded-lg px-3 h-8 outline-none focus:border-green-500/40 cursor-pointer hover:border-white/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed';
 
   return (
     <div className="flex flex-wrap items-center justify-center gap-2 mb-6">
@@ -94,11 +103,14 @@ function FilterBar({ filters, setFilters, planOptions, countryOptions }) {
           Filter
         </span>
       </div>
+
       <div className="flex items-center gap-1">
         {statuses.map(s => (
           <button
             key={s}
-            onClick={() => setFilters(f => ({ ...f, status: s }))}
+            type="button"
+            disabled={disabled}
+            onClick={() => setFilters(prev => ({ ...prev, status: s }))}
             className={`px-3 h-8 rounded-lg text-xs font-mono uppercase tracking-wide transition-all border ${
               filters.status === s
                 ? s === 'alive'
@@ -107,15 +119,19 @@ function FilterBar({ filters, setFilters, planOptions, countryOptions }) {
                   ? 'bg-red-500/20 text-red-400 border-red-500/40'
                   : 'bg-white/10 text-white/70 border-white/20'
                 : 'bg-transparent text-white/25 border-white/8 hover:border-white/15 hover:text-white/40'
-            }`}
+            } disabled:opacity-50 disabled:cursor-not-allowed`}
           >
             {s}
           </button>
         ))}
       </div>
+
       <select
         value={filters.plan}
-        onChange={e => setFilters(f => ({ ...f, plan: e.target.value }))}
+        disabled={disabled}
+        onChange={e =>
+          setFilters(prev => ({ ...prev, plan: e.target.value }))
+        }
         className={selectClass}
       >
         {planOptions.map(p => (
@@ -124,9 +140,13 @@ function FilterBar({ filters, setFilters, planOptions, countryOptions }) {
           </option>
         ))}
       </select>
+
       <select
         value={filters.country}
-        onChange={e => setFilters(f => ({ ...f, country: e.target.value }))}
+        disabled={disabled}
+        onChange={e =>
+          setFilters(prev => ({ ...prev, country: e.target.value }))
+        }
         className={selectClass}
       >
         {countryOptions.map(c => (
@@ -135,14 +155,17 @@ function FilterBar({ filters, setFilters, planOptions, countryOptions }) {
           </option>
         ))}
       </select>
+
       {(filters.status !== 'all' ||
         filters.plan !== 'all' ||
         filters.country !== 'all') && (
         <button
+          type="button"
+          disabled={disabled}
           onClick={() =>
             setFilters({ status: 'all', plan: 'all', country: 'all' })
           }
-          className="px-3 h-8 rounded-lg text-xs font-mono uppercase tracking-wide text-white/25 border border-white/8 hover:text-red-400 hover:border-red-500/30 transition-all"
+          className="px-3 h-8 rounded-lg text-xs font-mono uppercase tracking-wide text-white/25 border border-white/8 hover:text-red-400 hover:border-red-500/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Reset
         </button>
@@ -165,6 +188,7 @@ function FreeCookieSmallCard({
 }) {
   const isAlive = cookie.is_alive !== false;
   const sourceLabel = cookie.source === 'admin' ? 'ADMIN' : 'FREE';
+
   return (
     <motion.div
       data-testid={`free-cookie-card-${globalIndex}`}
@@ -205,6 +229,7 @@ function FreeCookieSmallCard({
           >
             {isAlive ? 'ALIVE' : 'DEAD'}
           </Badge>
+
           {showSourceBadge && (
             <Badge className="bg-blue-500/20 text-blue-300 border border-blue-500/30 text-[10px] font-mono px-1.5 py-0">
               {sourceLabel}
@@ -225,9 +250,7 @@ function FreeCookieSmallCard({
               data-testid={`favorite-btn-${globalIndex}`}
             >
               <Star
-                className={`w-3.5 h-3.5 ${
-                  isFavorited ? 'fill-yellow-400' : ''
-                }`}
+                className={`w-3.5 h-3.5 ${isFavorited ? 'fill-yellow-400' : ''}`}
               />
             </button>
           )}
@@ -253,18 +276,17 @@ function FreeCookieSmallCard({
           {cookie.email || '—'}
         </span>
       </div>
+
       <div className="flex items-center gap-2 mb-1.5">
         <CreditCard className="w-3.5 h-3.5 text-white/20 shrink-0" />
-        <span className="text-white/40 text-xs">
-          {cookie.plan || '—'}
-        </span>
+        <span className="text-white/40 text-xs">{cookie.plan || '—'}</span>
       </div>
+
       <div className="flex items-center gap-2">
         <Globe className="w-3.5 h-3.5 text-white/20 shrink-0" />
-        <span className="text-white/40 text-xs">
-          {cookie.country || '—'}
-        </span>
+        <span className="text-white/40 text-xs">{cookie.country || '—'}</span>
       </div>
+
       <div className="mt-3 pt-2 border-t border-white/5 text-[10px] font-mono text-center tracking-widest text-white/15 group-hover:text-green-400 transition-colors duration-200">
         TAP TO USE
       </div>
@@ -299,6 +321,7 @@ function FreeCookieModal({
   const [showCookie, setShowCookie] = useState(false);
   const [showBrowserCookies, setShowBrowserCookies] = useState(false);
   const { token } = useAuth();
+
   const isAlive = cookie.is_alive !== false;
   const cookieSource = cookie.source === 'admin' ? 'admin' : 'free';
   const sourceLabel = cookieSource === 'admin' ? 'ADMIN' : 'FREE';
@@ -308,8 +331,10 @@ function FreeCookieModal({
       toast.error('Enter the code from your TV');
       return;
     }
+
     setTvLoading(true);
     setTvResult(null);
+
     try {
       const res = await axios.post(
         `${API}/tv-code`,
@@ -317,6 +342,7 @@ function FreeCookieModal({
         { headers: { Authorization: `Bearer ${token}` } },
       );
       setTvResult(res.data);
+
       if (res.data.success) toast.success(res.data.message);
       else toast.error(res.data.message);
     } catch (err) {
@@ -333,11 +359,13 @@ function FreeCookieModal({
         cookieSource === 'admin'
           ? `${API}/admin/admin-cookies/${cookie.id}/refresh-token`
           : `${API}/free-cookies/${cookie.id}/refresh-token`;
+
       const res = await axios.post(
         refreshEndpoint,
         {},
         { headers: { Authorization: `Bearer ${token}` } },
       );
+
       setCurrentNftoken(res.data.nftoken);
       setCurrentNftokenLink(res.data.nftoken_link);
       setLastRefreshed(new Date().toISOString());
@@ -359,6 +387,7 @@ function FreeCookieModal({
           onClick={onClose}
           className="absolute inset-0 bg-black/75 backdrop-blur-sm"
         />
+
         <motion.div
           initial={{ opacity: 0, scale: 0.95, y: 24 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -378,6 +407,7 @@ function FreeCookieModal({
               <span className="font-mono text-xs text-white/40">
                 {sourceLabel} COOKIE #{globalIndex + 1}
               </span>
+
               <Badge
                 className={`${
                   isAlive
@@ -387,9 +417,11 @@ function FreeCookieModal({
               >
                 {isAlive ? 'ALIVE' : 'DEAD'}
               </Badge>
+
               <Badge className="bg-blue-500/20 text-blue-300 border border-blue-500/30 text-[10px] font-mono px-1.5">
                 {sourceLabel}
               </Badge>
+
               {lastRefreshed && (
                 <span className="text-[10px] text-white/15 font-mono flex items-center gap-1">
                   <RefreshCw className="w-2.5 h-2.5" />
@@ -397,6 +429,7 @@ function FreeCookieModal({
                 </span>
               )}
             </div>
+
             <div className="flex items-center gap-2">
               {canFavorite && (
                 <button
@@ -413,12 +446,11 @@ function FreeCookieModal({
                   }
                 >
                   <Star
-                    className={`w-4 h-4 ${
-                      isFavorited ? 'fill-yellow-400' : ''
-                    }`}
+                    className={`w-4 h-4 ${isFavorited ? 'fill-yellow-400' : ''}`}
                   />
                 </button>
               )}
+
               <button
                 onClick={onClose}
                 className="text-white/30 hover:text-white transition-colors p-1"
@@ -473,6 +505,7 @@ function FreeCookieModal({
                       NFToken
                     </span>
                   </div>
+
                   <button
                     onClick={handleRefreshToken}
                     disabled={tokenRefreshing}
@@ -488,6 +521,7 @@ function FreeCookieModal({
                     </span>
                   </button>
                 </div>
+
                 <div className="flex items-center gap-2">
                   <code className="flex-1 font-mono text-xs text-green-400/80 bg-black/40 px-3 py-2 rounded-lg truncate">
                     {currentNftoken}
@@ -497,6 +531,7 @@ function FreeCookieModal({
                     testId={`nftoken-copy-${globalIndex}`}
                   />
                 </div>
+
                 {currentNftokenLink && (
                   <div className="flex flex-col sm:flex-row gap-2 pt-1">
                     <a
@@ -508,6 +543,7 @@ function FreeCookieModal({
                       <Link2 className="w-4 h-4" />
                       Open Netflix
                     </a>
+
                     <a
                       href={`https://www.netflix.com/?nftoken=${currentNftoken}`}
                       target="_blank"
@@ -530,6 +566,7 @@ function FreeCookieModal({
                     Sign In on TV
                   </span>
                 </div>
+
                 <div className="flex items-center gap-2">
                   <input
                     value={tvCode}
@@ -554,6 +591,7 @@ function FreeCookieModal({
                     )}
                   </button>
                 </div>
+
                 {tvResult && (
                   <div
                     className={`mt-2 text-xs px-3 py-2 rounded-xl ${
@@ -565,9 +603,10 @@ function FreeCookieModal({
                     {tvResult.message}
                   </div>
                 )}
+
                 <p className="text-[10px] text-white/15 mt-2">
-                  Open Netflix on your TV, select "Sign In" and enter the 8‑digit
-                  code shown.
+                  Open Netflix on your TV, select &quot;Sign In&quot; and enter
+                  the 8-digit code shown.
                 </p>
               </div>
             )}
@@ -590,6 +629,7 @@ function FreeCookieModal({
                     ▾
                   </span>
                 </button>
+
                 {showBrowserCookies && (
                   <div className="relative px-5 pb-4">
                     <pre className="text-xs font-mono text-green-400/60 bg-black/60 rounded-xl p-4 overflow-x-auto max-h-40 overflow-y-auto whitespace-pre-wrap break-all">
@@ -624,6 +664,7 @@ function FreeCookieModal({
                     ▾
                   </span>
                 </button>
+
                 {showCookie && (
                   <div className="relative px-5 pb-4">
                     <pre className="text-xs font-mono text-white/40 bg-black/60 rounded-xl p-4 overflow-x-auto max-h-40 overflow-y-auto whitespace-pre-wrap break-all">
@@ -648,6 +689,7 @@ function FreeCookieModal({
 
 export default function FreeCookiesPage() {
   const { user, token } = useAuth();
+
   const [cookies, setCookies] = useState([]);
   const [loading, setLoading] = useState(true);
   const [displayLimit, setDisplayLimit] = useState(10);
@@ -656,11 +698,13 @@ export default function FreeCookiesPage() {
   const [refreshing, setRefreshing] = useState(false);
   const [selectedCookie, setSelectedCookie] = useState(null);
   const [selectedGlobalIndex, setSelectedGlobalIndex] = useState(null);
+
   const [filters, setFilters] = useState({
     status: 'all',
     plan: 'all',
     country: 'all',
   });
+
   const [page, setPage] = useState(1);
   const [pageInput, setPageInput] = useState('1');
   const [totalPages, setTotalPages] = useState(1);
@@ -668,14 +712,17 @@ export default function FreeCookiesPage() {
   const [allPlanOptions, setAllPlanOptions] = useState(['all']);
   const [allCountryOptions, setAllCountryOptions] = useState(['all']);
 
-  // Favorites state
-  const [activeTab, setActiveTab] = useState('all'); // 'all' | 'favorites'
+  const [activeTab, setActiveTab] = useState('all');
   const [favoriteIds, setFavoriteIds] = useState(new Set());
   const [favoriteCookiesMaster, setFavoriteCookiesMaster] = useState([]);
   const [favoriteCookiesOthers, setFavoriteCookiesOthers] = useState([]);
   const [favoritesLoading, setFavoritesLoading] = useState(false);
 
-  const headers = { Authorization: `Bearer ${token}` };
+  const headers = useMemo(
+    () => ({ Authorization: `Bearer ${token}` }),
+    [token],
+  );
+
   const isAdmin = user?.is_master === true;
   const isPremium = user?.tier === 'premium' && !isAdmin;
   const canFavorite = isAdmin || isPremium;
@@ -683,6 +730,7 @@ export default function FreeCookiesPage() {
 
   const fetchCookies = async (pageParam = 1, filtersParam = filters) => {
     setLoading(true);
+
     try {
       const params = {
         page: pageParam,
@@ -699,6 +747,7 @@ export default function FreeCookiesPage() {
 
       const data = res.data;
       const list = data.cookies || [];
+
       setCookies(list);
       setTotal(data.total || list.length);
       setTotalPages(data.total_pages || 1);
@@ -709,11 +758,10 @@ export default function FreeCookiesPage() {
       const countries = Array.from(
         new Set(list.map(c => c.country).filter(Boolean)),
       ).sort();
+
       setAllPlanOptions(['all', ...plans]);
       setAllCountryOptions(['all', ...countries]);
-
-      // do NOT reset displayLimit from here; backend doesn't send it
-    } catch (err) {
+    } catch {
       toast.error('Failed to load free cookies');
     } finally {
       setLoading(false);
@@ -726,6 +774,7 @@ export default function FreeCookiesPage() {
       toast.error('Enter a valid positive number');
       return;
     }
+
     setSavingLimit(true);
     try {
       const res = await axios.patch(
@@ -735,6 +784,7 @@ export default function FreeCookiesPage() {
       );
       toast.success(res.data.message || 'Limit updated');
       setDisplayLimit(val);
+      setLimitInput('');
     } catch (err) {
       toast.error(
         err.response?.data?.detail || 'Failed to update free cookies limit',
@@ -765,37 +815,47 @@ export default function FreeCookiesPage() {
 
   const fetchLimit = async () => {
     if (!isAdmin) return;
+
     try {
-      const res = await axios.get(`${API}/admin/free-cookies/limit`, { headers });
+      const res = await axios.get(`${API}/admin/free-cookies/limit`, {
+        headers,
+      });
       if (typeof res.data.limit === 'number') {
         setDisplayLimit(res.data.limit);
       }
     } catch {
-    // ignore; fallback stays 10
+      // ignore
     }
   };
 
   const handleDeleteCookie = async cookieToDelete => {
     if (!isAdmin) return;
+
     const cookieId =
       typeof cookieToDelete === 'string' ? cookieToDelete : cookieToDelete?.id;
+
     const cookieSource =
       typeof cookieToDelete === 'object' && cookieToDelete?.source === 'admin'
         ? 'admin'
         : 'free';
+
     const normalizedSource = cookieSource;
     const sourceLabel = cookieSource === 'admin' ? 'admin' : 'free';
+
     const endpoint =
       cookieSource === 'admin'
         ? `${API}/admin/admin-cookies/${cookieId}`
         : `${API}/admin/free-cookies/${cookieId}`;
 
     if (!window.confirm(`Delete this ${sourceLabel} cookie?`)) return;
+
     try {
       await axios.delete(endpoint, { headers });
+
       toast.success(
         cookieSource === 'admin' ? 'Admin cookie deleted' : 'Free cookie deleted',
       );
+
       setCookies(prev => prev.filter(c => c.id !== cookieId));
       setFavoriteCookiesMaster(prev =>
         prev.filter(
@@ -816,19 +876,18 @@ export default function FreeCookiesPage() {
         ),
       );
       setFavoriteIds(prev => {
-        const n = new Set(prev);
-        n.delete(cookieId);
-        return n;
+        const next = new Set(prev);
+        next.delete(cookieId);
+        return next;
       });
     } catch (err) {
-      toast.error(
-        err.response?.data?.detail || 'Failed to delete cookie',
-      );
+      toast.error(err.response?.data?.detail || 'Failed to delete cookie');
     }
   };
 
   const fetchFavoriteIds = async () => {
     if (!canFavorite) return;
+
     try {
       const res = await axios.get(`${API}/favorites/ids`, { headers });
       setFavoriteIds(new Set(res.data.favorites || []));
@@ -839,9 +898,11 @@ export default function FreeCookiesPage() {
 
   const fetchFavorites = async () => {
     if (!canFavorite) return;
+
     setFavoritesLoading(true);
     try {
       const res = await axios.get(`${API}/favorites`, { headers });
+
       const all = (res.data.cookies || []).map(c => ({
         ...c,
         source: c.source === 'admin' ? 'admin' : 'free',
@@ -850,9 +911,8 @@ export default function FreeCookiesPage() {
       if (isAdmin) {
         const myId = user?.id;
         const mine = all.filter(c => c.hidden_by === myId);
-        const others = all.filter(
-          c => c.hidden_by && c.hidden_by !== myId,
-        );
+        const others = all.filter(c => c.hidden_by && c.hidden_by !== myId);
+
         setFavoriteCookiesMaster(mine);
         setFavoriteCookiesOthers(others);
       } else {
@@ -866,34 +926,29 @@ export default function FreeCookiesPage() {
     }
   };
 
-  useEffect(() => {
-    if (!token) return;
-    fetchCookies(1, filters);
-    fetchFavoriteIds();
-    fetchLimit();
-  }, [token]); // eslint-disable-line
-
-
-  useEffect(() => {
-    if (activeTab === 'favorites') {
-      fetchFavorites();
-    }
-  }, [activeTab]); // eslint-disable-line
-
-  useEffect(() => {
-    setPageInput(String(page));
-  }, [page]);
-
-  const handleFilterApply = newFilters => {
-    setFilters(newFilters);
+  const updateFilters = updater => {
     setPage(1);
-    fetchCookies(1, newFilters);
+    setPageInput('1');
+    setFilters(prev =>
+      typeof updater === 'function' ? updater(prev) : updater,
+    );
   };
 
-  const publicCookies = useMemo(() => {
-    if (isAdmin) return cookies;
-    return cookies.filter(c => !favoriteIds.has(c.id));
-  }, [cookies, favoriteIds, isAdmin]);
+  const handlePageChange = newPage => {
+    const nextPage = Math.min(totalPages, Math.max(1, newPage));
+    setPage(nextPage);
+    setPageInput(String(nextPage));
+  };
+
+  const handlePageJump = () => {
+    const parsed = Number.parseInt(pageInput, 10);
+    if (Number.isNaN(parsed)) {
+      setPageInput(String(page));
+      return;
+    }
+
+    handlePageChange(parsed);
+  };
 
   const toggleFavorite = async cookieId => {
     if (!canFavorite) {
@@ -902,6 +957,7 @@ export default function FreeCookiesPage() {
     }
 
     const isAlreadyFav = favoriteIds.has(cookieId);
+
     if (!isAdmin && !isAlreadyFav && favoriteIds.size >= 10) {
       toast.error('Premium keys can only favorite up to 10 cookies');
       return;
@@ -913,6 +969,7 @@ export default function FreeCookiesPage() {
         {},
         { headers },
       );
+
       const newIds = new Set(favoriteIds);
 
       if (res.data.favorited) {
@@ -922,6 +979,7 @@ export default function FreeCookiesPage() {
       } else {
         newIds.delete(cookieId);
         toast.success('Removed from favorites');
+
         if (activeTab === 'favorites') {
           setFavoriteCookiesMaster(prev =>
             prev.filter(c => c.id !== cookieId),
@@ -929,41 +987,51 @@ export default function FreeCookiesPage() {
           setFavoriteCookiesOthers(prev =>
             prev.filter(c => c.id !== cookieId),
           );
+        } else {
+          fetchCookies(page, filters);
         }
-        fetchCookies(page, filters);
       }
+
       setFavoriteIds(newIds);
     } catch (err) {
-      const msg =
-        err.response?.data?.detail || 'Failed to update favorites';
+      const msg = err.response?.data?.detail || 'Failed to update favorites';
       toast.error(msg);
     }
   };
 
-  const handlePageChange = newPage => {
-    setPage(newPage);
-    fetchCookies(newPage, filters);
-  };
+  useEffect(() => {
+    if (!token) return;
+    fetchFavoriteIds();
+  }, [token, canFavorite]); // eslint-disable-line
 
-  const handlePageJump = () => {
-    const parsed = Number.parseInt(pageInput, 10);
-    if (Number.isNaN(parsed)) {
-      setPageInput(String(page));
-      return;
-    }
-    const nextPage = Math.min(totalPages, Math.max(1, parsed));
-    handlePageChange(nextPage);
-    setPageInput(String(nextPage));
-  };
+  useEffect(() => {
+    if (!token) return;
+    fetchLimit();
+  }, [token, isAdmin]); // eslint-disable-line
+
+  useEffect(() => {
+    if (!token || activeTab !== 'all') return;
+    fetchCookies(page, filters);
+  }, [token, activeTab, page, filters]); // eslint-disable-line
+
+  useEffect(() => {
+    if (!token || activeTab !== 'favorites') return;
+    fetchFavorites();
+  }, [token, activeTab]); // eslint-disable-line
+
+  useEffect(() => {
+    setPageInput(String(page));
+  }, [page]);
+
+  const publicCookies = useMemo(() => {
+    if (isAdmin) return cookies;
+    return cookies.filter(c => !favoriteIds.has(c.id));
+  }, [cookies, favoriteIds, isAdmin]);
 
   const visibleList =
     activeTab === 'favorites'
       ? [...favoriteCookiesMaster, ...favoriteCookiesOthers]
       : publicCookies;
-
-  const selectedIndex = selectedCookie
-    ? visibleList.findIndex(c => c.id === selectedCookie.id)
-    : -1;
 
   return (
     <div className="min-h-screen bg-[#050505]">
@@ -985,15 +1053,18 @@ export default function FreeCookiesPage() {
                 </p>
               </div>
             </div>
+
             <div className="text-right">
               <div className="font-bebas text-lg tracking-widest text-green-400">
                 {visibleList.length}/{total} COOKIES
               </div>
+
               {isPremium && (
                 <div className="text-[11px] text-white/40 mt-1">
                   Favorites: {favoriteIds.size}/10
                 </div>
               )}
+
               {isAdmin && (
                 <div className="text-[11px] text-white/40 mt-1">
                   MASTER KEY
@@ -1015,6 +1086,7 @@ export default function FreeCookiesPage() {
             <Cookie className="w-3.5 h-3.5" />
             All Free
           </button>
+
           {canFavorite && (
             <button
               onClick={() => setActiveTab('favorites')}
@@ -1049,7 +1121,7 @@ export default function FreeCookiesPage() {
                 </h2>
               </div>
               <p className="text-xs text-white/40 mb-2">
-                Control how many free cookies are visible to non‑premium users,
+                Control how many free cookies are visible to non-premium users,
                 and refresh NFToken for all free cookies.
               </p>
               <div className="flex items-center gap-3">
@@ -1059,6 +1131,7 @@ export default function FreeCookiesPage() {
                     {displayLimit}
                   </span>
                 </span>
+
                 <div className="flex items-center gap-1.5">
                   <Input
                     className="w-16 h-8 bg-black/60 border border-white/15 text-xs text-white px-2"
@@ -1081,6 +1154,7 @@ export default function FreeCookiesPage() {
                 </div>
               </div>
             </div>
+
             <div className="flex flex-col items-start md:items-end gap-2">
               <Button
                 onClick={refreshTokens}
@@ -1095,7 +1169,7 @@ export default function FreeCookiesPage() {
                 REFRESH TOKENS
               </Button>
               <span className="text-[11px] text-white/40">
-                This will try to re‑generate NFToken for all free cookies.
+                This will try to re-generate NFToken for all free cookies.
               </span>
             </div>
           </div>
@@ -1119,7 +1193,7 @@ export default function FreeCookiesPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {favoriteCookiesMaster.map((cookie, idx) => (
                   <FreeCookieSmallCard
-                    key={cookie.id}
+                    key={`${cookie.source || 'free'}-${cookie.id}`}
                     cookie={cookie}
                     globalIndex={idx}
                     isAdmin={isAdmin}
@@ -1142,6 +1216,7 @@ export default function FreeCookiesPage() {
               <h3 className="text-xs font-mono uppercase tracking-wide text-white/40 mb-2">
                 Your favorites
               </h3>
+
               {favoriteCookiesMaster.length === 0 ? (
                 <p className="text-[11px] text-white/30 mb-4">
                   You have no favorites yet.
@@ -1150,7 +1225,7 @@ export default function FreeCookiesPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
                   {favoriteCookiesMaster.map((cookie, idx) => (
                     <FreeCookieSmallCard
-                      key={cookie.id}
+                      key={`${cookie.source || 'free'}-${cookie.id}`}
                       cookie={cookie}
                       globalIndex={idx}
                       isAdmin={isAdmin}
@@ -1183,7 +1258,7 @@ export default function FreeCookiesPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {favoriteCookiesOthers.map((cookie, idx) => (
                     <FreeCookieSmallCard
-                      key={cookie.id}
+                      key={`${cookie.source || 'free'}-${cookie.id}`}
                       cookie={cookie}
                       globalIndex={idx}
                       isAdmin={isAdmin}
@@ -1216,10 +1291,12 @@ export default function FreeCookiesPage() {
           <>
             <FilterBar
               filters={filters}
-              setFilters={handleFilterApply}
+              setFilters={updateFilters}
               planOptions={allPlanOptions}
               countryOptions={allCountryOptions}
+              disabled={loading}
             />
+
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {publicCookies.map((cookie, idx) => (
                 <FreeCookieSmallCard
@@ -1232,14 +1309,13 @@ export default function FreeCookiesPage() {
                   onDelete={handleDeleteCookie}
                   onClick={() => {
                     setSelectedCookie(cookie);
-                    setSelectedGlobalIndex(
-                      (page - 1) * pageSize + idx,
-                    );
+                    setSelectedGlobalIndex((page - 1) * pageSize + idx);
                   }}
                   onToggleFavorite={toggleFavorite}
                 />
               ))}
             </div>
+
             {totalPages > 1 && (
               <div className="flex items-center justify-center gap-3 mt-8">
                 <button
@@ -1249,9 +1325,11 @@ export default function FreeCookiesPage() {
                 >
                   Prev
                 </button>
+
                 <span className="text-xs text-white/40 font-mono">
                   Page {page} of {totalPages}
                 </span>
+
                 <div className="flex items-center gap-1">
                   <input
                     value={pageInput}
@@ -1267,6 +1345,7 @@ export default function FreeCookiesPage() {
                     Go
                   </button>
                 </div>
+
                 <button
                   disabled={page === totalPages}
                   onClick={() => handlePageChange(page + 1)}
