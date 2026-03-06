@@ -135,22 +135,34 @@ async def require_admin_or_premium(authorization: str = Header(None)):
 # --- Favorites Helpers ---
 async def get_hidden_cookie_ids_for_user(user: dict):
     """
-    Returns a set of free/admin cookie IDs that should be hidden from this user,
-    based on favorites (i.e., cookies 'reserved' by other keys).
-    Master key sees everything, so we return an empty set.
+    IDs that should be hidden from this user in public listings.
+    - Master: sees all (return empty set).
+    - Premium/free: hide cookies whose hidden_by contains any other key.
     """
     if user.get("is_master"):
         return set()
 
-    # cookies hidden by ANY key except this one
-    cursor = db.favorites.find(
-        {"favorited": True, "key_id": {"$ne": user["id"]}},
-        {"_id": 0, "cookie_id": 1}
+    hidden_ids = set()
+
+    cursor_free = db.free_cookies.find(
+        {"hidden_by": {"$exists": True, "$ne": []}},
+        {"_id": 0, "id": 1, "hidden_by": 1}
     )
-    ids = set()
-    async for doc in cursor:
-        ids.add(doc["cookie_id"])
-    return ids
+    async for doc in cursor_free:
+        hb = set(doc.get("hidden_by", []))
+        if hb and (hb - {user["id"]}):
+            hidden_ids.add(doc["id"])
+
+    cursor_admin = db.admin_cookies.find(
+        {"hidden_by": {"$exists": True, "$ne": []}},
+        {"_id": 0, "id": 1, "hidden_by": 1}
+    )
+    async for doc in cursor_admin:
+        hb = set(doc.get("hidden_by", []))
+        if hb and (hb - {user["id"]}):
+            hidden_ids.add(doc["id"])
+
+    return hidden_ids
 
 async def get_key_label(key_id: str) -> str:
     doc = await db.access_keys.find_one({"id": key_id}, {"_id": 0, "label": 1})
@@ -1297,6 +1309,16 @@ async def toggle_favorite(
             {"key_id": key_id, "cookie_id": cookie_id, "source": source},
             {"$set": {"favorited": False}}
         )
+        if source == "admin":
+            await db.admin_cookies.update_one(
+                {"id": cookie_id},
+                {"$pull": {"hidden_by": key_id}}
+            )
+        else:
+            await db.free_cookies.update_one(
+                {"id": cookie_id},
+                {"$pull": {"hidden_by": key_id}}
+            )
         return {"cookie_id": cookie_id, "favorited": False}
 
     # enforce 10 limit for premium (only counting active favorites)
@@ -1323,6 +1345,16 @@ async def toggle_favorite(
         },
         upsert=True,
     )
+    if source == "admin":
+        await db.admin_cookies.update_one(
+            {"id": cookie_id},
+            {"$addToSet": {"hidden_by": key_id}}
+        )
+    else:
+        await db.free_cookies.update_one(
+            {"id": cookie_id},
+            {"$addToSet": {"hidden_by": key_id}}
+        )
 
     return {"cookie_id": cookie_id, "favorited": True}
 
