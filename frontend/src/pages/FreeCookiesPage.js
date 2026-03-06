@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import {
-  Gift,
+  Cookie,
   Trash2,
   Copy,
   Check,
@@ -974,7 +974,7 @@ export default function FreeCookiesPage() {
         >
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-3">
-              <Gift className="w-7 h-7 text-green-400" />
+              <Cookie className="w-7 h-7 text-green-400" />
               <div>
                 <h1 className="font-bebas text-4xl sm:text-5xl tracking-wider text-white">
                   FREE <span className="text-green-400">COOKIES</span>
@@ -1012,7 +1012,7 @@ export default function FreeCookiesPage() {
                 : 'text-white/30 border-white/8 hover:border-green-500/20 hover:text-green-400/60'
             }`}
           >
-            <Gift className="w-3.5 h-3.5" />
+            <Cookie className="w-3.5 h-3.5" />
             All Free
           </button>
           {canFavorite && (
@@ -1209,7 +1209,7 @@ export default function FreeCookiesPage() {
           </div>
         ) : publicCookies.length === 0 ? (
           <div className="text-center py-16 text-white/40">
-            <Gift className="w-10 h-10 mx-auto mb-2 text-white/20" />
+            <Cookie className="w-10 h-10 mx-auto mb-2 text-white/20" />
             <p>No free cookies available.</p>
           </div>
         ) : (
