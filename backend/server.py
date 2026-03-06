@@ -1321,6 +1321,16 @@ async def refresh_single_free_cookie_token(cookie_id: str, user: dict = Depends(
         )
         raise HTTPException(status_code=400, detail=nft_err or "Failed to generate token â€” cookie may be dead")
 
+@api_router.get("/cookies/total-count")
+async def get_total_cookie_count(user: dict = Depends(get_current_user)):
+    free_total = await db.free_cookies.count_documents({})
+    admin_total = await db.admin_cookies.count_documents({})
+    return {
+        "free": free_total,
+        "admin": admin_total,
+        "total": free_total + admin_total,
+    }
+
 #{
 #  "key_id": "<access key id>",
 #  "cookie_id": "<free or admin cookie id>",
