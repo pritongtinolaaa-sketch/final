@@ -816,28 +816,27 @@ export default function AdminCookiesPage() {
   });
 }, [cookies, filters]);
 
-// Hide cookies hidden by other keys from All tab for premium (master sees all)
-const publicCookies = useMemo(() => {
-  // Master key: see everything
-  if (isAdmin) return filteredCookies;
+  // Hide cookies hidden by other keys from All tab for premium (master sees all)
+  const publicCookies = useMemo(() => {
+    // Master key: see everything
+    if (isAdmin) return filteredCookies;
 
-  // Premium: hide cookies whose hidden_by contains any other key
-  return filteredCookies.filter(c => {
-    const hiddenBy = new Set<string>((c.hidden_by as string[]) || []);
+    // Premium: hide cookies whose hidden_by contains any other key
+    return filteredCookies.filter(c => {
+      const hiddenBy = new Set((c.hidden_by || []));
 
-    // nobody hid it -> visible
-    if (hiddenBy.size === 0) return true;
+      // nobody hid it -> visible
+      if (hiddenBy.size === 0) return true;
 
-    // if there is any hider that is not me -> hide
-    if (user?.id && (hiddenBy.size > 1 || !hiddenBy.has(user.id))) {
-      return false;
-    }
+      // if there is any hider that is not me -> hide
+      if (user?.id && (hiddenBy.size > 1 || !hiddenBy.has(user.id))) {
+        return false;
+      }
 
-    // hidden only by me -> still show
-    return true;
-  });
-}, [filteredCookies, isAdmin, user?.id]);
-
+      // hidden only by me -> still show
+      return true;
+    });
+  }, [filteredCookies, isAdmin, user?.id]);
 
   const totalForTab =
     activeTab === 'favorites'
