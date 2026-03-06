@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import {
   ShieldCheck, Trash2, Copy, Check, Loader2, Mail, CreditCard, Globe, Calendar,
-  Clock, Users, Key, Link2, RefreshCw, Tv, Monitor, Smartphone, X, Settings, Filter
+  Clock, Users, Key, Link2, RefreshCw, Tv, Monitor, Smartphone, X, Settings, Filter, Star
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
@@ -79,7 +79,6 @@ function FilterBar({ cookies, filters, setFilters }) {
         <Filter className="w-3.5 h-3.5" />
         <span className="text-xs font-mono uppercase tracking-wide">Filter</span>
       </div>
-
       <div className="flex items-center gap-1">
         {statuses.map(s => (
           <button
@@ -99,31 +98,12 @@ function FilterBar({ cookies, filters, setFilters }) {
           </button>
         ))}
       </div>
-
-      <select
-        value={filters.plan}
-        onChange={e => setFilters(f => ({ ...f, plan: e.target.value }))}
-        className={selectClass}
-      >
-        {plans.map(p => (
-          <option key={p} value={p} className="bg-[#111]">
-            {p === 'all' ? 'All Plans' : p}
-          </option>
-        ))}
+      <select value={filters.plan} onChange={e => setFilters(f => ({ ...f, plan: e.target.value }))} className={selectClass}>
+        {plans.map(p => <option key={p} value={p} className="bg-[#111]">{p === 'all' ? 'All Plans' : p}</option>)}
       </select>
-
-      <select
-        value={filters.country}
-        onChange={e => setFilters(f => ({ ...f, country: e.target.value }))}
-        className={selectClass}
-      >
-        {countries.map(c => (
-          <option key={c} value={c} className="bg-[#111]">
-            {c === 'all' ? 'All Countries' : c}
-          </option>
-        ))}
+      <select value={filters.country} onChange={e => setFilters(f => ({ ...f, country: e.target.value }))} className={selectClass}>
+        {countries.map(c => <option key={c} value={c} className="bg-[#111]">{c === 'all' ? 'All Countries' : c}</option>)}
       </select>
-
       {(filters.status !== 'all' || filters.plan !== 'all' || filters.country !== 'all') && (
         <button
           onClick={() => setFilters({ status: 'all', plan: 'all', country: 'all' })}
@@ -136,7 +116,7 @@ function FilterBar({ cookies, filters, setFilters }) {
   );
 }
 
-function AdminCookieSmallCard({ cookie, index, onDelete, onClick, isInFreeCookies, isAdmin }) {
+function AdminCookieSmallCard({ cookie, index, onDelete, onClick, isInFreeCookies, isAdmin, canFavorite, isFavorited, onToggleFavorite }) {
   const isAlive = cookie.is_alive !== false;
   return (
     <motion.div
@@ -153,7 +133,7 @@ function AdminCookieSmallCard({ cookie, index, onDelete, onClick, isInFreeCookie
         active:scale-[0.97]`}
     >
       <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <div className={`w-2 h-2 rounded-full shrink-0 ${isAlive ? 'bg-green-400 shadow-[0_0_6px_rgba(74,222,128,0.5)]' : 'bg-red-400'}`} />
           <span className="font-mono text-xs text-white/30">#{index + 1}</span>
           <Badge className={`${isAlive ? 'bg-green-500/20 text-green-400 border-green-500/30' : 'bg-red-500/20 text-red-400 border-red-500/30'} border text-[10px] font-mono px-1.5 py-0`}>
@@ -165,41 +145,46 @@ function AdminCookieSmallCard({ cookie, index, onDelete, onClick, isInFreeCookie
             </Badge>
           )}
         </div>
-        {/* Delete only for master */}
-        {isAdmin && (
-          <button
-            onClick={e => { e.stopPropagation(); onDelete(cookie.id); }}
-            className="text-white/15 hover:text-red-400 transition-colors p-1"
-          >
-            <Trash2 className="w-3.5 h-3.5" />
-          </button>
-        )}
+        <div className="flex items-center gap-1">
+          {canFavorite && (
+            <button
+              onClick={e => { e.stopPropagation(); onToggleFavorite(cookie.id); }}
+              className={`p-1 transition-all ${isFavorited ? 'text-yellow-400 hover:text-yellow-300' : 'text-white/15 hover:text-yellow-400'}`}
+            >
+              <Star className={`w-3.5 h-3.5 ${isFavorited ? 'fill-yellow-400' : ''}`} />
+            </button>
+          )}
+          {isAdmin && (
+            <button
+              onClick={e => { e.stopPropagation(); onDelete(cookie.id); }}
+              className="text-white/15 hover:text-red-400 transition-colors p-1"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="flex items-center gap-2 mb-1.5">
         <Mail className="w-3.5 h-3.5 text-white/20 shrink-0" />
         <span className="text-white/70 text-xs font-mono truncate">{cookie.email || '—'}</span>
       </div>
-
       <div className="flex items-center gap-2 mb-1.5">
         <CreditCard className="w-3.5 h-3.5 text-white/20 shrink-0" />
         <span className="text-white/40 text-xs">{cookie.plan || '—'}</span>
       </div>
-
       <div className="flex items-center gap-2">
         <Globe className="w-3.5 h-3.5 text-white/20 shrink-0" />
         <span className="text-white/40 text-xs">{cookie.country || '—'}</span>
       </div>
-
-      <div className="mt-3 pt-2 border-t border-white/5 text-[10px] font-mono text-center tracking-widest
-        text-white/15 group-hover:text-purple-400 transition-colors duration-200">
+      <div className="mt-3 pt-2 border-t border-white/5 text-[10px] font-mono text-center tracking-widest text-white/15 group-hover:text-purple-400 transition-colors duration-200">
         TAP TO USE
       </div>
     </motion.div>
   );
 }
 
-function AdminCookieModal({ cookie, index, onClose, isInFreeCookies, isAdmin }) {
+function AdminCookieModal({ cookie, index, onClose, isInFreeCookies, isAdmin, canFavorite, isFavorited, onToggleFavorite }) {
   const [tvCode, setTvCode] = useState('');
   const [tvLoading, setTvLoading] = useState(false);
   const [tvResult, setTvResult] = useState(null);
@@ -210,7 +195,6 @@ function AdminCookieModal({ cookie, index, onClose, isInFreeCookies, isAdmin }) 
   const [showCookie, setShowCookie] = useState(false);
   const [showBrowserCookies, setShowBrowserCookies] = useState(false);
   const { token } = useAuth();
-
   const isAlive = cookie.is_alive !== false;
 
   const handleTvCode = async () => {
@@ -219,9 +203,7 @@ function AdminCookieModal({ cookie, index, onClose, isInFreeCookies, isAdmin }) 
     setTvResult(null);
     try {
       const res = await axios.post(`${API}/tv-code`, {
-        code: tvCode,
-        cookie_id: cookie.id,
-        cookie_source: 'admin'
+        code: tvCode, cookie_id: cookie.id, cookie_source: 'admin'
       }, { headers: { Authorization: `Bearer ${token}` } });
       setTvResult(res.data);
       if (res.data.success) toast.success(res.data.message);
@@ -253,23 +235,16 @@ function AdminCookieModal({ cookie, index, onClose, isInFreeCookies, isAdmin }) 
   return (
     <AnimatePresence>
       <div className="fixed inset-0 z-40 flex items-center justify-center pt-16">
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          onClick={onClose}
-          className="absolute inset-0 bg-black/75 backdrop-blur-sm"
-        />
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} className="absolute inset-0 bg-black/75 backdrop-blur-sm" />
         <motion.div
           initial={{ opacity: 0, scale: 0.95, y: 24 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 12 }}
           transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-          className="relative w-[calc(100vw-2rem)] sm:w-[500px] max-h-[85vh] bg-[#0a0a0a] border border-purple-500/20 rounded-2xl z-10 flex flex-col overflow-hidden
-            shadow-[inset_0_1px_0_rgba(168,85,247,0.1),0_24px_48px_rgba(0,0,0,0.8)]"
+          className="relative w-[calc(100vw-2rem)] sm:w-[500px] max-h-[85vh] bg-[#0a0a0a] border border-purple-500/20 rounded-2xl z-10 flex flex-col overflow-hidden shadow-[inset_0_1px_0_rgba(168,85,247,0.1),0_24px_48px_rgba(0,0,0,0.8)]"
         >
           <div className="px-5 py-4 border-b border-purple-500/10 flex items-center justify-between shrink-0">
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 flex-wrap">
               <div className={`w-2 h-2 rounded-full ${isAlive ? 'bg-green-400 shadow-[0_0_6px_rgba(74,222,128,0.5)]' : 'bg-red-400'}`} />
               <span className="font-mono text-xs text-white/40">ADMIN COOKIE #{index + 1}</span>
               <Badge className={`${isAlive ? 'bg-green-500/20 text-green-400 border-green-500/30' : 'bg-red-500/20 text-red-400 border-red-500/30'} border text-[10px] font-mono px-1.5`}>
@@ -287,9 +262,20 @@ function AdminCookieModal({ cookie, index, onClose, isInFreeCookies, isAdmin }) 
                 </span>
               )}
             </div>
-            <button onClick={onClose} className="text-white/30 hover:text-white transition-colors p-1">
-              <X className="w-4 h-4" />
-            </button>
+            <div className="flex items-center gap-2">
+              {canFavorite && (
+                <button
+                  onClick={() => onToggleFavorite(cookie.id)}
+                  className={`p-1.5 rounded-lg transition-all ${isFavorited ? 'text-yellow-400 bg-yellow-400/10 hover:bg-yellow-400/20' : 'text-white/20 hover:text-yellow-400 hover:bg-yellow-400/10'}`}
+                  title={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
+                >
+                  <Star className={`w-4 h-4 ${isFavorited ? 'fill-yellow-400' : ''}`} />
+                </button>
+              )}
+              <button onClick={onClose} className="text-white/30 hover:text-white transition-colors p-1">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
           </div>
 
           <div className="overflow-y-auto flex-1">
@@ -311,40 +297,24 @@ function AdminCookieModal({ cookie, index, onClose, isInFreeCookies, isAdmin }) 
                     <Key className="w-4 h-4 text-purple-400/60" />
                     <span className="text-xs text-white/40 uppercase tracking-wide">NFToken</span>
                   </div>
-                  <button
-                    onClick={handleRefreshToken}
-                    disabled={tokenRefreshing}
-                    className="flex items-center gap-1 text-[10px] text-white/30 hover:text-purple-400 transition-colors disabled:opacity-50"
-                  >
+                  <button onClick={handleRefreshToken} disabled={tokenRefreshing} className="flex items-center gap-1 text-[10px] text-white/30 hover:text-purple-400 transition-colors disabled:opacity-50">
                     {tokenRefreshing ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
                     <span className="uppercase tracking-wide font-mono">Refresh Token</span>
                   </button>
                 </div>
                 <div className="flex items-center gap-2">
-                  <code className="flex-1 font-mono text-xs text-purple-400/80 bg-black/40 px-3 py-2 rounded-lg truncate">
-                    {currentNftoken}
-                  </code>
+                  <code className="flex-1 font-mono text-xs text-purple-400/80 bg-black/40 px-3 py-2 rounded-lg truncate">{currentNftoken}</code>
                   <CopyBtn text={currentNftoken} />
                 </div>
                 {currentNftokenLink && (
                   <div className="flex flex-col sm:flex-row gap-2 pt-1">
-                    <a
-                      href={currentNftokenLink}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-sm font-bebas tracking-widest uppercase bg-purple-500/15 text-purple-400 border border-purple-500/30 hover:bg-purple-500/25 transition-all"
-                    >
-                      <Link2 className="w-4 h-4" />
-                      Open Netflix with Token
+                    <a href={currentNftokenLink} target="_blank" rel="noopener noreferrer"
+                      className="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-sm font-bebas tracking-widest uppercase bg-purple-500/15 text-purple-400 border border-purple-500/30 hover:bg-purple-500/25 transition-all">
+                      <Link2 className="w-4 h-4" /> Open Netflix with Token
                     </a>
-                    <a
-                      href={`https://www.netflix.com/unsupported?nftoken=${currentNftoken}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-sm font-bebas tracking-widest uppercase bg-blue-500/15 text-blue-400 border border-blue-500/30 hover:bg-blue-500/25 transition-all"
-                    >
-                      <Smartphone className="w-4 h-4" />
-                      Open in Phone
+                    <a href={`https://www.netflix.com/unsupported?nftoken=${currentNftoken}`} target="_blank" rel="noopener noreferrer"
+                      className="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-sm font-bebas tracking-widest uppercase bg-blue-500/15 text-blue-400 border border-blue-500/30 hover:bg-blue-500/25 transition-all">
+                      <Smartphone className="w-4 h-4" /> Open in Phone
                     </a>
                   </div>
                 )}
@@ -383,51 +353,31 @@ function AdminCookieModal({ cookie, index, onClose, isInFreeCookies, isAdmin }) 
               </div>
             )}
 
-            {/* Browser cookies — master only */}
             {isAdmin && cookie.browser_cookies && (
               <div className="border-t border-white/5">
-                <button
-                  onClick={() => setShowBrowserCookies(p => !p)}
-                  className="w-full px-5 py-3 flex items-center justify-between text-xs text-green-400/50 hover:text-green-400/80 transition-colors"
-                >
-                  <span className="font-mono uppercase tracking-wide">
-                    {showBrowserCookies ? 'Hide' : 'View'} Browser Cookies
-                  </span>
+                <button onClick={() => setShowBrowserCookies(p => !p)} className="w-full px-5 py-3 flex items-center justify-between text-xs text-green-400/50 hover:text-green-400/80 transition-colors">
+                  <span className="font-mono uppercase tracking-wide">{showBrowserCookies ? 'Hide' : 'View'} Browser Cookies</span>
                   <span className={`transition-transform duration-200 inline-block ${showBrowserCookies ? 'rotate-180' : ''}`}>▾</span>
                 </button>
                 {showBrowserCookies && (
                   <div className="relative px-5 pb-4">
-                    <pre className="text-xs font-mono text-green-400/60 bg-black/60 rounded-xl p-4 overflow-x-auto max-h-40 overflow-y-auto whitespace-pre-wrap break-all">
-                      {cookie.browser_cookies}
-                    </pre>
-                    <div className="absolute top-2 right-7">
-                      <CopyBtn text={cookie.browser_cookies} />
-                    </div>
+                    <pre className="text-xs font-mono text-green-400/60 bg-black/60 rounded-xl p-4 overflow-x-auto max-h-40 overflow-y-auto whitespace-pre-wrap break-all">{cookie.browser_cookies}</pre>
+                    <div className="absolute top-2 right-7"><CopyBtn text={cookie.browser_cookies} /></div>
                   </div>
                 )}
               </div>
             )}
 
-            {/* Full cookie — master only */}
             {isAdmin && cookie.full_cookie && (
               <div className="border-t border-white/5">
-                <button
-                  onClick={() => setShowCookie(p => !p)}
-                  className="w-full px-5 py-3 flex items-center justify-between text-xs text-white/30 hover:text-white/50 transition-colors"
-                >
-                  <span className="font-mono uppercase tracking-wide">
-                    {showCookie ? 'Hide' : 'View'} Original Cookie
-                  </span>
+                <button onClick={() => setShowCookie(p => !p)} className="w-full px-5 py-3 flex items-center justify-between text-xs text-white/30 hover:text-white/50 transition-colors">
+                  <span className="font-mono uppercase tracking-wide">{showCookie ? 'Hide' : 'View'} Original Cookie</span>
                   <span className={`transition-transform duration-200 inline-block ${showCookie ? 'rotate-180' : ''}`}>▾</span>
                 </button>
                 {showCookie && (
                   <div className="relative px-5 pb-4">
-                    <pre className="text-xs font-mono text-white/40 bg-black/60 rounded-xl p-4 overflow-x-auto max-h-40 overflow-y-auto whitespace-pre-wrap break-all">
-                      {cookie.full_cookie}
-                    </pre>
-                    <div className="absolute top-2 right-7">
-                      <CopyBtn text={cookie.full_cookie} />
-                    </div>
+                    <pre className="text-xs font-mono text-white/40 bg-black/60 rounded-xl p-4 overflow-x-auto max-h-40 overflow-y-auto whitespace-pre-wrap break-all">{cookie.full_cookie}</pre>
+                    <div className="absolute top-2 right-7"><CopyBtn text={cookie.full_cookie} /></div>
                   </div>
                 )}
               </div>
@@ -448,25 +398,33 @@ export default function AdminCookiesPage() {
   const [selectedCookie, setSelectedCookie] = useState(null);
   const [filters, setFilters] = useState({ status: 'all', plan: 'all', country: 'all' });
 
+  // --- Favorites state ---
+  const [activeTab, setActiveTab] = useState('all');
+  const [favoriteIds, setFavoriteIds] = useState(new Set());
+  const [favoriteCookies, setFavoriteCookies] = useState([]);
+  const [favoritesLoading, setFavoritesLoading] = useState(false);
+
   const headers = { Authorization: `Bearer ${token}` };
   const isAdmin = user?.is_master === true;
   const isPremium = user?.tier === 'premium' && !isAdmin;
   const canAccess = isAdmin || isPremium;
+  const canFavorite = isAdmin || isPremium;
 
   useEffect(() => {
-    if (!user) return;
-    if (!canAccess) return;
+    if (!user || !canAccess) return;
     fetchAll();
+    fetchFavoriteIds();
   }, [user]); // eslint-disable-line
+
+  useEffect(() => {
+    if (activeTab === 'favorites') fetchFavorites();
+  }, [activeTab]); // eslint-disable-line
 
   const fetchAll = async () => {
     setLoading(true);
     try {
-      // Both master and premium can hit /admin/admin-cookies (backend allows require_admin_or_premium)
       const adminRes = await axios.get(`${API}/admin/admin-cookies`, { headers });
       setCookies(adminRes.data.cookies);
-
-      // Only master fetches free cookies list (to show IN FREE badge)
       if (isAdmin) {
         const freeRes = await axios.get(`${API}/admin/free-cookies`, { headers });
         setFreeCookieEmails(new Set(freeRes.data.cookies.map(c => c.email)));
@@ -478,10 +436,56 @@ export default function AdminCookiesPage() {
     }
   };
 
+  // --- Favorites API ---
+  const fetchFavoriteIds = async () => {
+    try {
+      const res = await axios.get(`${API}/favorites/ids`, { headers });
+      setFavoriteIds(new Set(res.data.favorites));
+    } catch {}
+  };
+
+  const fetchFavorites = async () => {
+    setFavoritesLoading(true);
+    try {
+      const res = await axios.get(`${API}/favorites`, { headers });
+      // Only show admin cookies in this tab
+      const adminOnly = (res.data.cookies || []).filter(c => c.source === 'admin');
+      setFavoriteCookies(adminOnly);
+    } catch {
+      toast.error('Failed to load favorites');
+    } finally {
+      setFavoritesLoading(false);
+    }
+  };
+
+  const toggleFavorite = async (cookieId) => {
+    try {
+      const res = await axios.post(`${API}/favorites/${cookieId}`, {}, { headers });
+      const newIds = new Set(favoriteIds);
+      if (res.data.favorited) {
+        newIds.add(cookieId);
+        toast.success('Added to favorites ★');
+      } else {
+        newIds.delete(cookieId);
+        toast.success('Removed from favorites');
+        if (activeTab === 'favorites') {
+          setFavoriteCookies(prev => prev.filter(c => c.id !== cookieId));
+        }
+      }
+      setFavoriteIds(newIds);
+    } catch {
+      toast.error('Failed to update favorites');
+    }
+  };
+
   const deleteCookie = async (cookieId) => {
     try {
       await axios.delete(`${API}/admin/admin-cookies/${cookieId}`, { headers });
       setCookies(prev => prev.filter(c => c.id !== cookieId));
+      setFavoriteCookies(prev => prev.filter(c => c.id !== cookieId));
+      const newIds = new Set(favoriteIds);
+      newIds.delete(cookieId);
+      setFavoriteIds(newIds);
       if (selectedCookie?.id === cookieId) setSelectedCookie(null);
       toast.success('Admin cookie removed');
     } catch {
@@ -512,7 +516,6 @@ export default function AdminCookiesPage() {
     });
   }, [cookies, filters]);
 
-  // Block free tier users only
   if (user && !canAccess) {
     return (
       <div className="min-h-screen bg-[#050505] flex items-center justify-center">
@@ -546,14 +549,44 @@ export default function AdminCookiesPage() {
           </div>
         </motion.div>
 
+        {/* Tabs */}
+        <div className="flex items-center gap-2 mb-6">
+          <button
+            onClick={() => setActiveTab('all')}
+            className={`flex items-center gap-2 px-4 h-9 rounded-xl text-xs font-mono uppercase tracking-wide border transition-all ${
+              activeTab === 'all'
+                ? 'bg-purple-500/15 text-purple-400 border-purple-500/30'
+                : 'text-white/30 border-white/8 hover:border-purple-500/20 hover:text-purple-400/60'
+            }`}
+          >
+            <ShieldCheck className="w-3.5 h-3.5" /> All Cookies
+          </button>
+          <button
+            onClick={() => setActiveTab('favorites')}
+            className={`flex items-center gap-2 px-4 h-9 rounded-xl text-xs font-mono uppercase tracking-wide border transition-all ${
+              activeTab === 'favorites'
+                ? 'bg-yellow-400/15 text-yellow-400 border-yellow-400/30'
+                : 'text-white/30 border-white/8 hover:border-yellow-400/20 hover:text-yellow-400/60'
+            }`}
+          >
+            <Star className={`w-3.5 h-3.5 ${activeTab === 'favorites' ? 'fill-yellow-400' : ''}`} />
+            Favorites
+            {favoriteIds.size > 0 && (
+              <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-mono ${activeTab === 'favorites' ? 'bg-yellow-400/20 text-yellow-400' : 'bg-white/10 text-white/30'}`}>
+                {/* Count only admin cookie favorites */}
+                {[...favoriteIds].filter(id => cookies.some(c => c.id === id)).length || favoriteIds.size}
+              </span>
+            )}
+          </button>
+        </div>
+
         {/* Admin Controls — master only */}
         {isAdmin && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="bg-gradient-to-b from-purple-500/10 to-white/[0.03] border border-purple-500/20 rounded-2xl p-6 mb-8
-              shadow-[inset_0_1px_0_rgba(168,85,247,0.15),0_8px_24px_rgba(0,0,0,0.6)]"
+            className="bg-gradient-to-b from-purple-500/10 to-white/[0.03] border border-purple-500/20 rounded-2xl p-6 mb-8 shadow-[inset_0_1px_0_rgba(168,85,247,0.15),0_8px_24px_rgba(0,0,0,0.6)]"
           >
             <div className="flex items-center gap-3 mb-4">
               <Settings className="w-4 h-4 text-white/40" />
@@ -577,44 +610,85 @@ export default function AdminCookiesPage() {
           </motion.div>
         )}
 
-        {loading ? (
-          <div className="text-center py-20">
-            <Loader2 className="w-8 h-8 text-purple-400 animate-spin mx-auto" />
-          </div>
-        ) : cookies.length === 0 ? (
-          <div className="text-center py-20 text-white/30">
-            <ShieldCheck className="w-12 h-12 mx-auto mb-3 text-white/10" />
-            <p>No admin cookies yet</p>
-            {isAdmin && <p className="text-xs text-white/15 mt-1">Check cookies on the Dashboard, then add valid ones here.</p>}
-          </div>
-        ) : (
+        {/* FAVORITES TAB */}
+        {activeTab === 'favorites' && (
           <>
-            <FilterBar cookies={cookies} filters={filters} setFilters={setFilters} />
-            {filteredCookies.length === 0 ? (
-              <div className="text-center py-16 text-white/30">
-                <Filter className="w-10 h-10 mx-auto mb-3 text-white/10" />
-                <p>No cookies match your filters</p>
-                <button
-                  onClick={() => setFilters({ status: 'all', plan: 'all', country: 'all' })}
-                  className="mt-2 text-xs text-white/20 hover:text-purple-400 transition-colors font-mono"
-                >
-                  Reset filters
-                </button>
+            {favoritesLoading ? (
+              <div className="text-center py-20">
+                <Loader2 className="w-8 h-8 text-yellow-400 animate-spin mx-auto" />
+              </div>
+            ) : favoriteCookies.length === 0 ? (
+              <div className="text-center py-20 text-white/30">
+                <Star className="w-12 h-12 mx-auto mb-3 text-white/10" />
+                <p>No favorites yet</p>
+                <p className="text-xs text-white/15 mt-1">Tap the ★ on any cookie to save it here</p>
               </div>
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-                {filteredCookies.map((cookie, idx) => (
+                {favoriteCookies.map((cookie, idx) => (
                   <AdminCookieSmallCard
                     key={cookie.id}
                     cookie={cookie}
                     index={idx}
                     isAdmin={isAdmin}
+                    canFavorite={canFavorite}
+                    isFavorited={true}
                     onDelete={deleteCookie}
-                    onClick={() => setSelectedCookie(cookie)}
+                    onToggleFavorite={toggleFavorite}
                     isInFreeCookies={freeCookieEmails.has(cookie.email)}
+                    onClick={() => {
+                      setSelectedCookie(cookie);
+                    }}
                   />
                 ))}
               </div>
+            )}
+          </>
+        )}
+
+        {/* ALL COOKIES TAB */}
+        {activeTab === 'all' && (
+          <>
+            {loading ? (
+              <div className="text-center py-20">
+                <Loader2 className="w-8 h-8 text-purple-400 animate-spin mx-auto" />
+              </div>
+            ) : cookies.length === 0 ? (
+              <div className="text-center py-20 text-white/30">
+                <ShieldCheck className="w-12 h-12 mx-auto mb-3 text-white/10" />
+                <p>No admin cookies yet</p>
+                {isAdmin && <p className="text-xs text-white/15 mt-1">Check cookies on the Dashboard, then add valid ones here.</p>}
+              </div>
+            ) : (
+              <>
+                <FilterBar cookies={cookies} filters={filters} setFilters={setFilters} />
+                {filteredCookies.length === 0 ? (
+                  <div className="text-center py-16 text-white/30">
+                    <Filter className="w-10 h-10 mx-auto mb-3 text-white/10" />
+                    <p>No cookies match your filters</p>
+                    <button onClick={() => setFilters({ status: 'all', plan: 'all', country: 'all' })} className="mt-2 text-xs text-white/20 hover:text-purple-400 transition-colors font-mono">
+                      Reset filters
+                    </button>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                    {filteredCookies.map((cookie, idx) => (
+                      <AdminCookieSmallCard
+                        key={cookie.id}
+                        cookie={cookie}
+                        index={idx}
+                        isAdmin={isAdmin}
+                        canFavorite={canFavorite}
+                        isFavorited={favoriteIds.has(cookie.id)}
+                        onDelete={deleteCookie}
+                        onToggleFavorite={toggleFavorite}
+                        isInFreeCookies={freeCookieEmails.has(cookie.email)}
+                        onClick={() => setSelectedCookie(cookie)}
+                      />
+                    ))}
+                  </div>
+                )}
+              </>
             )}
           </>
         )}
@@ -623,8 +697,11 @@ export default function AdminCookiesPage() {
       {selectedCookie && (
         <AdminCookieModal
           cookie={selectedCookie}
-          index={selectedIndex}
+          index={selectedIndex >= 0 ? selectedIndex : 0}
           isAdmin={isAdmin}
+          canFavorite={canFavorite}
+          isFavorited={favoriteIds.has(selectedCookie.id)}
+          onToggleFavorite={toggleFavorite}
           onClose={() => setSelectedCookie(null)}
           isInFreeCookies={freeCookieEmails.has(selectedCookie.email)}
         />
