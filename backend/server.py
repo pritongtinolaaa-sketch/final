@@ -26,7 +26,6 @@ db = client[os.environ['DB_NAME']]
 
 JWT_SECRET = os.environ['JWT_SECRET']
 JWT_ALGORITHM = "HS256"
-SESSION_TTL_DAYS = 7
 
 app = FastAPI()
 api_router = APIRouter(prefix="/api")
@@ -97,27 +96,18 @@ async def get_current_user(authorization: str = Header(None)):
     token_str = authorization.split(" ")[1]
     try:
         payload = jwt.decode(token_str, JWT_SECRET, algorithms=[JWT_ALGORITHM])
-        session_id = payload.get("session_id")
-        if not session_id:
-            raise HTTPException(status_code=401, detail="Invalid token")
-
-        key_doc = await db.access_keys.find_one(
-            {"id": payload["key_id"], "active_sessions.session_id": session_id},
-            {"_id": 0, "id": 1, "label": 1, "is_master": 1, "tier": 1, "expires_at": 1},
-        )
+        key_doc = await db.access_keys.find_one({"id": payload["key_id"]}, {"_id": 0})
         if not key_doc:
-            key_exists = await db.access_keys.find_one(
-                {"id": payload["key_id"]},
-                {"_id": 1},
-            )
-            if not key_exists:
-                raise HTTPException(status_code=401, detail="Key not found")
-            raise HTTPException(status_code=401, detail="Session revoked")
+            raise HTTPException(status_code=401, detail="Key not found")
         expires_at = key_doc.get("expires_at")
         if expires_at:
             expiry = datetime.fromisoformat(expires_at).replace(tzinfo=timezone.utc)
             if datetime.now(timezone.utc) > expiry:
                 raise HTTPException(status_code=401, detail="Access key has expired")
+        session_id = payload.get("session_id")
+        active = key_doc.get("active_sessions", [])
+        if not any(s["session_id"] == session_id for s in active):
+            raise HTTPException(status_code=401, detail="Session revoked")
         return {
             "id": key_doc["id"],
             "label": key_doc["label"],
@@ -145,34 +135,22 @@ async def require_admin_or_premium(authorization: str = Header(None)):
 # --- Favorites Helpers ---
 async def get_hidden_cookie_ids_for_user(user: dict):
     """
-    IDs that should be hidden from this user in public listings.
-    - Master: sees all (return empty set).
-    - Premium/free: hide cookies whose hidden_by contains any other key.
+    Returns a set of free/admin cookie IDs that should be hidden from this user,
+    based on favorites (i.e., cookies 'reserved' by other keys).
+    Master key sees everything, so we return an empty set.
     """
     if user.get("is_master"):
         return set()
 
-    hidden_ids = set()
-
-    cursor_free = db.free_cookies.find(
-        {"hidden_by": {"$exists": True, "$ne": []}},
-        {"_id": 0, "id": 1, "hidden_by": 1}
+    # cookies hidden by ANY key except this one
+    cursor = db.favorites.find(
+        {"favorited": True, "key_id": {"$ne": user["id"]}},
+        {"_id": 0, "cookie_id": 1}
     )
-    async for doc in cursor_free:
-        hb = set(doc.get("hidden_by", []))
-        if hb and (hb - {user["id"]}):
-            hidden_ids.add(doc["id"])
-
-    cursor_admin = db.admin_cookies.find(
-        {"hidden_by": {"$exists": True, "$ne": []}},
-        {"_id": 0, "id": 1, "hidden_by": 1}
-    )
-    async for doc in cursor_admin:
-        hb = set(doc.get("hidden_by", []))
-        if hb and (hb - {user["id"]}):
-            hidden_ids.add(doc["id"])
-
-    return hidden_ids
+    ids = set()
+    async for doc in cursor:
+        ids.add(doc["cookie_id"])
+    return ids
 
 async def get_key_label(key_id: str) -> str:
     doc = await db.access_keys.find_one({"id": key_id}, {"_id": 0, "label": 1})
@@ -227,16 +205,16 @@ def parse_cookie_string_to_dict(cookie_str: str) -> dict:
 
 # --- Plan / Member Since Helpers ---
 MONTH_MAP = {
-    'janvier': 'January', 'février': 'February', 'mars': 'March', 'avril': 'April',
-    'mai': 'May', 'juin': 'June', 'juillet': 'July', 'août': 'August',
-    'septembre': 'September', 'octobre': 'October', 'novembre': 'November', 'décembre': 'December',
+    'janvier': 'January', 'fÃ©vrier': 'February', 'mars': 'March', 'avril': 'April',
+    'mai': 'May', 'juin': 'June', 'juillet': 'July', 'aoÃ»t': 'August',
+    'septembre': 'September', 'octobre': 'October', 'novembre': 'November', 'dÃ©cembre': 'December',
     'enero': 'January', 'febrero': 'February', 'marzo': 'March', 'abril': 'April',
     'mayo': 'May', 'junio': 'June', 'julio': 'July', 'agosto': 'August',
     'septiembre': 'September', 'octubre': 'October', 'noviembre': 'November', 'diciembre': 'December',
-    'janeiro': 'January', 'fevereiro': 'February', 'março': 'March',
+    'janeiro': 'January', 'fevereiro': 'February', 'marÃ§o': 'March',
     'junho': 'June', 'julho': 'July', 'setembro': 'September', 'outubro': 'October',
     'dezembro': 'December',
-    'januar': 'January', 'februar': 'February', 'märz': 'March',
+    'januar': 'January', 'februar': 'February', 'mÃ¤rz': 'March',
     'juni': 'June', 'juli': 'July', 'oktober': 'October', 'dezember': 'December',
 }
 
@@ -247,7 +225,7 @@ def format_member_since(raw: str) -> str:
     cleaned = cleaned.strip()
     for foreign, english in MONTH_MAP.items():
         cleaned = re.sub(r'\b' + re.escape(foreign) + r'\b', english, cleaned, flags=re.IGNORECASE)
-    match = re.search(r'([A-Za-zéû]+)\s*(\d{4})', cleaned)
+    match = re.search(r'([A-Za-zÃ©Ã»]+)\s*(\d{4})', cleaned)
     if match:
         return f"{match.group(1)} {match.group(2)}"
     return cleaned
@@ -271,9 +249,9 @@ def normalize_plan_name(raw_plan: str) -> str:
         'standard with ads': 'Standard with ads',
         'standard avec pub': 'Standard with ads',
         'standard con anuncios': 'Standard with ads',
-        'standard com anúncios': 'Standard with ads',
+        'standard com anÃºncios': 'Standard with ads',
         'standard mit werbung': 'Standard with ads',
-        'standard con pubblicità': 'Standard with ads',
+        'standard con pubblicitÃ ': 'Standard with ads',
         'offre standard avec pub': 'Standard with ads',
         'offre essentiel': 'Standard with ads',
         'standard': 'Standard (HD)',
@@ -281,24 +259,24 @@ def normalize_plan_name(raw_plan: str) -> str:
         'standard hd': 'Standard (HD)',
         'offre standard': 'Standard (HD)',
         'piano standard': 'Standard (HD)',
-        'plano padrão': 'Standard (HD)',
+        'plano padrÃ£o': 'Standard (HD)',
         'plano standard': 'Standard (HD)',
         'plan standard': 'Standard (HD)',
-        'plan estándar': 'Standard (HD)',
-        'estándar': 'Standard (HD)',
+        'plan estÃ¡ndar': 'Standard (HD)',
+        'estÃ¡ndar': 'Standard (HD)',
         'estandar': 'Standard (HD)',
-        'padrão': 'Standard (HD)',
+        'padrÃ£o': 'Standard (HD)',
         'padrao': 'Standard (HD)',
         'standard-plan': 'Standard (HD)',
         'basic': 'Basic',
         'basic with ads': 'Basic with ads',
-        'básico': 'Basic',
+        'bÃ¡sico': 'Basic',
         'basico': 'Basic',
         'offre basique': 'Basic',
-        'básico com anúncios': 'Basic with ads',
-        'básico con anuncios': 'Basic with ads',
+        'bÃ¡sico com anÃºncios': 'Basic with ads',
+        'bÃ¡sico con anuncios': 'Basic with ads',
         'mobile': 'Mobile',
-        'móvil': 'Mobile',
+        'mÃ³vil': 'Mobile',
     }
     if p in plan_map:
         return plan_map[p]
@@ -723,22 +701,7 @@ async def ping():
 # --- Auth Routes ---
 @api_router.post("/auth/login")
 async def login(data: KeyLogin):
-    submitted_key = re.sub(r'[\u200B-\u200D\uFEFF]', '', (data.key or '')).strip()
-    if not submitted_key:
-        raise HTTPException(status_code=401, detail="Invalid access key")
-
-    key_doc = await db.access_keys.find_one(
-        {"key_value": submitted_key},
-        {
-            "_id": 0,
-            "id": 1,
-            "label": 1,
-            "is_master": 1,
-            "tier": 1,
-            "expires_at": 1,
-            "max_devices": 1,
-        },
-    )
+    key_doc = await db.access_keys.find_one({"key_value": data.key}, {"_id": 0})
     if not key_doc:
         raise HTTPException(status_code=401, detail="Invalid access key")
     expires_at = key_doc.get("expires_at")
@@ -746,21 +709,8 @@ async def login(data: KeyLogin):
         expiry = datetime.fromisoformat(expires_at).replace(tzinfo=timezone.utc)
         if datetime.now(timezone.utc) > expiry:
             raise HTTPException(status_code=401, detail="Access key has expired")
-
-    # Prune stale sessions (older than JWT TTL) to keep auth docs small and login fast.
-    cutoff = (datetime.now(timezone.utc) - timedelta(days=SESSION_TTL_DAYS)).isoformat()
-    await db.access_keys.update_one(
-        {"id": key_doc["id"]},
-        {"$pull": {"active_sessions": {"created_at": {"$lt": cutoff}}}},
-    )
-
-    active_info = await db.access_keys.aggregate([
-        {"$match": {"id": key_doc["id"]}},
-        {"$project": {"_id": 0, "active_count": {"$size": {"$ifNull": ["$active_sessions", []]}}}},
-    ]).to_list(1)
-    active_count = active_info[0]["active_count"] if active_info else 0
-
-    if active_count >= key_doc.get("max_devices", 1) and not key_doc.get("is_master"):
+    active = key_doc.get("active_sessions", [])
+    if len(active) >= key_doc.get("max_devices", 1) and not key_doc.get("is_master"):
         raise HTTPException(status_code=403, detail=f"Device limit reached ({key_doc['max_devices']})")
     session_id = str(uuid.uuid4())
     token = jwt.encode(
@@ -768,7 +718,7 @@ async def login(data: KeyLogin):
             "key_id": key_doc["id"],
             "session_id": session_id,
             "is_master": key_doc.get("is_master", False),
-            "exp": datetime.now(timezone.utc) + timedelta(days=SESSION_TTL_DAYS)
+            "exp": datetime.now(timezone.utc) + timedelta(days=7)
         },
         JWT_SECRET, algorithm=JWT_ALGORITHM
     )
@@ -821,7 +771,7 @@ async def check_cookie_with_semaphore(block, format_type, job_id, index, total, 
                     is_free_cookie = True
                     logger.warning(
                         f"[FREE COOKIE DUPLICATE] Cookie checked by '{user['label']}' "
-                        f"is already in free cookies — email: {result['email']}"
+                        f"is already in free cookies â€” email: {result['email']}"
                     )
             result["is_free_cookie"] = is_free_cookie
             is_admin_cookie = False
@@ -1024,7 +974,7 @@ async def create_key(data: KeyCreate, user: dict = Depends(require_admin)):
 async def list_keys(user: dict = Depends(require_admin)):
     keys = await db.access_keys.find({}, {"_id": 0}).to_list(100)
     for k in keys:
-        k["key_preview"] = "••••••••••••"
+        k["key_preview"] = "â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
         k["session_count"] = len(k.get("active_sessions", []))
     return keys
 
@@ -1154,6 +1104,44 @@ async def set_free_cookies_limit(data: FreeCookieLimitUpdate, user: dict = Depen
         upsert=True
     )
     return {"message": "Limit updated", "limit": data.limit}
+
+@api_router.get("/admin/free-cookies/limit")
+async def get_free_cookies_limit(user: dict = Depends(require_admin)):
+    setting = await db.settings.find_one({"key": "free_cookies_limit"}, {"_id": 0})
+    limit = setting.get("value", 10) if setting else 10
+    return {"limit": limit}
+
+# --- Hidden IDs helper for listings ---
+async def get_hidden_cookie_ids_for_user(user: dict):
+    """
+    IDs that should be hidden from this user in public listings.
+    - Master: sees all (return empty set).
+    - Premium/free: hide cookies whose hidden_by contains any other key.
+    """
+    if user.get("is_master"):
+        return set()
+
+    hidden_ids = set()
+
+    cursor_free = db.free_cookies.find(
+        {"hidden_by": {"$exists": True, "$ne": []}},
+        {"_id": 0, "id": 1, "hidden_by": 1}
+    )
+    async for doc in cursor_free:
+        hb = set(doc.get("hidden_by", []))
+        if hb and (hb - {user["id"]}):
+            hidden_ids.add(doc["id"])
+
+    cursor_admin = db.admin_cookies.find(
+        {"hidden_by": {"$exists": True, "$ne": []}},
+        {"_id": 0, "id": 1, "hidden_by": 1}
+    )
+    async for doc in cursor_admin:
+        hb = set(doc.get("hidden_by", []))
+        if hb and (hb - {user["id"]}):
+            hidden_ids.add(doc["id"])
+
+    return hidden_ids
 
 @api_router.get("/free-cookies")
 async def get_free_cookies(
@@ -1297,16 +1285,16 @@ async def refresh_single_free_cookie_token(cookie_id: str, user: dict = Depends(
             {"id": cookie_id},
             {"$set": {"is_alive": False, "last_refreshed": datetime.now(timezone.utc).isoformat()}}
         )
-        raise HTTPException(status_code=400, detail=nft_err or "Failed to generate token — cookie may be dead")
+        raise HTTPException(status_code=400, detail=nft_err or "Failed to generate token â€” cookie may be dead")
 
-{
-  "key_id": "<access key id>",
-  "cookie_id": "<free or admin cookie id>",
-  "source": "free" | "admin",
-  "favorited": true,
-  "favorited_at": "...",
-  "hidden_by_label": "Premium User 1"
-}
+#{
+#  "key_id": "<access key id>",
+#  "cookie_id": "<free or admin cookie id>",
+#  "source": "free" | "admin",
+#  "favorited": true,
+#  "favorited_at": "...",
+#  "hidden_by_label": "Premium User 1"
+#}
 
 from pydantic import BaseModel
 
@@ -1347,16 +1335,6 @@ async def toggle_favorite(
             {"key_id": key_id, "cookie_id": cookie_id, "source": source},
             {"$set": {"favorited": False}}
         )
-        if source == "admin":
-            await db.admin_cookies.update_one(
-                {"id": cookie_id},
-                {"$pull": {"hidden_by": key_id}}
-            )
-        else:
-            await db.free_cookies.update_one(
-                {"id": cookie_id},
-                {"$pull": {"hidden_by": key_id}}
-            )
         return {"cookie_id": cookie_id, "favorited": False}
 
     # enforce 10 limit for premium (only counting active favorites)
@@ -1383,16 +1361,6 @@ async def toggle_favorite(
         },
         upsert=True,
     )
-    if source == "admin":
-        await db.admin_cookies.update_one(
-            {"id": cookie_id},
-            {"$addToSet": {"hidden_by": key_id}}
-        )
-    else:
-        await db.free_cookies.update_one(
-            {"id": cookie_id},
-            {"$addToSet": {"hidden_by": key_id}}
-        )
 
     return {"cookie_id": cookie_id, "favorited": True}
 
@@ -1554,7 +1522,86 @@ async def refresh_single_admin_cookie_token(cookie_id: str, user: dict = Depends
             {"id": cookie_id},
             {"$set": {"is_alive": False, "last_refreshed": datetime.now(timezone.utc).isoformat()}}
         )
-        raise HTTPException(status_code=400, detail=nft_err or "Failed to generate token — cookie may be dead")
+        raise HTTPException(status_code=400, detail=nft_err or "Failed to generate token â€” cookie may be dead")
+
+# --- Favorites Routes (Premium/Master only) ---
+@api_router.post("/favorites/{cookie_id}")
+async def toggle_favorite(cookie_id: str, user: dict = Depends(require_admin_or_premium)):
+    key_doc = await db.access_keys.find_one({"id": user["id"]}, {"_id": 0})
+    if not key_doc:
+        raise HTTPException(status_code=404, detail="Key not found")
+
+    favorites = key_doc.get("favorites", [])
+
+    # already favorited -> un-favorite and remove from hidden_by
+    if cookie_id in favorites:
+        await db.access_keys.update_one(
+            {"id": user["id"]},
+            {"$pull": {"favorites": cookie_id}}
+        )
+        await db.free_cookies.update_one(
+            {"id": cookie_id},
+            {"$pull": {"hidden_by": user["id"]}}
+        )
+        await db.admin_cookies.update_one(
+            {"id": cookie_id},
+            {"$pull": {"hidden_by": user["id"]}}
+        )
+        return {"favorited": False, "message": "Removed from favorites"}
+
+    # new favorite: enforce premium 10â€‘limit (master unlimited)
+    if not user.get("is_master") and key_doc.get("tier") == "premium":
+        current_count = len(favorites)
+        if current_count >= 10:
+            raise HTTPException(
+                status_code=400,
+                detail="Premium keys can favorite at most 10 cookies"
+            )
+
+    await db.access_keys.update_one(
+        {"id": user["id"]},
+        {"$addToSet": {"favorites": cookie_id}}
+    )
+    await db.free_cookies.update_one(
+        {"id": cookie_id},
+        {"$addToSet": {"hidden_by": user["id"]}}
+    )
+    await db.admin_cookies.update_one(
+        {"id": cookie_id},
+        {"$addToSet": {"hidden_by": user["id"]}}
+    )
+
+    return {"favorited": True, "message": "Added to favorites"}
+
+@api_router.get("/favorites/ids")
+async def get_favorite_ids(user: dict = Depends(require_admin_or_premium)):
+    key_doc = await db.access_keys.find_one({"id": user["id"]}, {"_id": 0})
+    if not key_doc:
+        return {"favorites": []}
+    return {"favorites": key_doc.get("favorites", [])}
+
+@api_router.get("/favorites")
+async def get_favorites(user: dict = Depends(require_admin_or_premium)):
+    key_doc = await db.access_keys.find_one({"id": user["id"]}, {"_id": 0})
+    if not key_doc:
+        return {"cookies": []}
+    favorite_ids = key_doc.get("favorites", [])
+    if not favorite_ids:
+        return {"cookies": []}
+    free_cookies = await db.free_cookies.find(
+        {"id": {"$in": favorite_ids}}, {"_id": 0}
+    ).to_list(500)
+    admin_cookies = await db.admin_cookies.find(
+        {"id": {"$in": favorite_ids}}, {"_id": 0}
+    ).to_list(500)
+    for c in free_cookies:
+        c["source"] = "free"
+        if not user.get("is_master"):
+            c.pop("browser_cookies", None)
+    for c in admin_cookies:
+        c["source"] = "admin"
+    all_cookies = free_cookies + admin_cookies
+    return {"cookies": all_cookies}
 
 # --- Admin: see all hidden cookies and who hid them ---
 @api_router.get("/admin/hidden-cookies")
@@ -1660,7 +1707,7 @@ async def activate_tv_code(cookies: dict, code: str):
             elif '/browse' in final_url or '/profiles' in final_url:
                 return True, "TV device activated! Code accepted."
             else:
-                return True, "Code submitted. Check your TV — it should be signed in now."
+                return True, "Code submitted. Check your TV â€” it should be signed in now."
     except Exception as e:
         logger.error(f"TV code activation error: {e}")
         return False, f"Activation failed: {str(e)}"
@@ -1784,7 +1831,6 @@ async def seed_master_key():
     elif existing["key_value"] != master_key:
         await db.access_keys.update_one({"is_master": True}, {"$set": {"key_value": master_key}})
         logger.info("Master key updated")
-
     _refresh_task = asyncio.create_task(refresh_free_cookie_tokens())
     logger.info("NFToken auto-refresh task started (every 10 min)")
 
