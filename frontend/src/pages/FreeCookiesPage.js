@@ -161,6 +161,7 @@ function FreeCookieSmallCard({
   onClick,
   onToggleFavorite,
   isMasterFavoritesView = false,
+  showSourceBadge = false,
 }) {
   const isAlive = cookie.is_alive !== false;
   const sourceLabel = cookie.source === 'admin' ? 'ADMIN' : 'FREE';
@@ -204,9 +205,11 @@ function FreeCookieSmallCard({
           >
             {isAlive ? 'ALIVE' : 'DEAD'}
           </Badge>
-          <Badge className="bg-blue-500/20 text-blue-300 border border-blue-500/30 text-[10px] font-mono px-1.5 py-0">
-            {sourceLabel}
-          </Badge>
+          {showSourceBadge && (
+            <Badge className="bg-blue-500/20 text-blue-300 border border-blue-500/30 text-[10px] font-mono px-1.5 py-0">
+              {sourceLabel}
+            </Badge>
+          )}
 
           {canFavorite && (
             <button
@@ -1113,6 +1116,7 @@ export default function FreeCookiesPage() {
                     }}
                     onToggleFavorite={toggleFavorite}
                     isMasterFavoritesView={false}
+                    showSourceBadge={true}
                   />
                 ))}
               </div>
@@ -1143,6 +1147,7 @@ export default function FreeCookiesPage() {
                       }}
                       onToggleFavorite={toggleFavorite}
                       isMasterFavoritesView={true}
+                      showSourceBadge={true}
                     />
                   ))}
                 </div>
@@ -1175,6 +1180,7 @@ export default function FreeCookiesPage() {
                       }}
                       onToggleFavorite={toggleFavorite}
                       isMasterFavoritesView={true}
+                      showSourceBadge={true}
                     />
                   ))}
                 </div>

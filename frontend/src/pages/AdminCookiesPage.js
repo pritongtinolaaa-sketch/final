@@ -204,6 +204,7 @@ function AdminCookieSmallCard({
   isFavorited,
   onToggleFavorite,
   isMasterFavoritesView = false,
+  showSourceBadge = false,
 }: {
   cookie: any;
   index: number;
@@ -215,6 +216,7 @@ function AdminCookieSmallCard({
   isFavorited: boolean;
   onToggleFavorite: (id: string) => void;
   isMasterFavoritesView?: boolean;
+  showSourceBadge?: boolean;
 }) {
   const isAlive = cookie.is_alive !== false;
   const sourceLabel = cookie.source === 'free' ? 'FREE' : 'ADMIN';
@@ -253,7 +255,7 @@ function AdminCookieSmallCard({
           >
             {isAlive ? 'ALIVE' : 'DEAD'}
           </Badge>
-          {sourceLabel && (
+          {showSourceBadge && sourceLabel && (
             <Badge className="bg-blue-500/20 text-blue-300 border border-blue-500/30 text-[10px] font-mono px-1.5 py-0">
               {sourceLabel}
             </Badge>
@@ -1121,6 +1123,7 @@ export default function AdminCookiesPage() {
                       onDelete={deleteCookie}
                       onToggleFavorite={toggleFavorite}
                       isMasterFavoritesView={true}
+                      showSourceBadge={true}
                       isInFreeCookies={
                         cookie.source === 'free' || freeCookieEmails.has(cookie.email)
                       }
@@ -1153,6 +1156,7 @@ export default function AdminCookiesPage() {
                       onDelete={deleteCookie}
                       onToggleFavorite={toggleFavorite}
                       isMasterFavoritesView={true}
+                      showSourceBadge={true}
                       isInFreeCookies={
                         cookie.source === 'free' || freeCookieEmails.has(cookie.email)
                       }
@@ -1175,6 +1179,7 @@ export default function AdminCookiesPage() {
                     isFavorited={true}
                     onDelete={deleteCookie}
                     onToggleFavorite={toggleFavorite}
+                    showSourceBadge={true}
                     isInFreeCookies={
                       cookie.source === 'free' || freeCookieEmails.has(cookie.email)
                     }
