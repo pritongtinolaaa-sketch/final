@@ -172,6 +172,38 @@ export default function HomeDashboardPage() {
             </div>
           </div>
         </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 18 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.08 }}
+          className="mt-6 rounded-2xl p-5 md:p-6 bg-gradient-to-b from-white/10 to-white/[0.03] border border-white/15 shadow-[inset_0_1px_0_rgba(255,255,255,0.12),0_8px_24px_rgba(0,0,0,0.5)]"
+        >
+          <h2 className="font-bebas tracking-widest text-white text-2xl mb-3">
+            HOW TO USE THE SITE
+          </h2>
+          <ol className="space-y-2 text-sm text-white/70 leading-relaxed list-decimal pl-5">
+            <li>
+              Open <span className="text-white">Cookie Checker</span> to paste or
+              upload cookies and validate them.
+            </li>
+            <li>
+              Review results and export valid cookies from the results section.
+            </li>
+            <li>
+              Browse <span className="text-green-400">Free Cookies</span> and use
+              favorites to save cookies you want quick access to.
+            </li>
+            <li>
+              Premium and Master keys can also access{' '}
+              <span className="text-purple-400">Admin Cookies</span>.
+            </li>
+            <li>
+              Use the <span className="text-primary">Keys</span> page (Master only)
+              to manage key names, tier, sessions, and expiry.
+            </li>
+          </ol>
+        </motion.div>
       </div>
     </div>
   );
