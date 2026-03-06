@@ -139,15 +139,15 @@ export default function HomeDashboardPage() {
                 <div className="mt-4 flex items-center gap-3">
                   <span className="text-white/50 text-sm font-mono">Current tier:</span>
                   {isMaster ? (
-                    <Badge className="text-[10px] font-mono bg-amber-300 text-amber-950 border border-yellow-100/90 shadow-[0_0_10px_rgba(251,191,36,0.55)]">
+                    <Badge className="text-[9px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-gradient-to-r from-amber-300 via-yellow-100 to-amber-300 text-amber-950 border border-yellow-100/90 ring-1 ring-amber-200/60 shadow-[0_0_14px_rgba(251,191,36,0.9),0_0_26px_rgba(245,158,11,0.55),inset_0_1px_0_rgba(255,255,255,0.95),inset_0_-1px_1px_rgba(146,64,14,0.35)]">
                       MASTER
                     </Badge>
                   ) : isPremium ? (
-                    <Badge className="text-[10px] font-mono bg-purple-600/35 text-purple-200 border border-purple-300/40">
+                    <Badge className="text-[9px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-gradient-to-r from-purple-600/35 via-violet-500/30 to-purple-600/35 text-purple-200 border border-purple-300/40 ring-1 ring-purple-400/25 shadow-[0_0_8px_rgba(168,85,247,0.35),inset_0_1px_0_rgba(255,255,255,0.18),inset_0_-1px_1px_rgba(46,16,101,0.3)]">
                       PREMIUM
                     </Badge>
                   ) : (
-                    <Badge className="text-[10px] font-mono bg-white/10 text-white/50 border border-white/15">
+                    <Badge className="text-[9px] font-mono font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-sm bg-white/10 text-white/40 border border-white/10">
                       FREE
                     </Badge>
                   )}
