@@ -4,6 +4,7 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { Toaster } from "@/components/ui/sonner";
 import AuthPage from "@/pages/AuthPage";
 import DashboardPage from "@/pages/DashboardPage";
+import HomeDashboardPage from "@/pages/HomeDashboardPage";
 import AdminCookiesPage from "@/pages/AdminCookiesPage";
 import AdminPage from "@/pages/AdminPage";
 import AdminLogsPage from "@/pages/AdminLogsPage";
@@ -73,7 +74,8 @@ function AppLayout() {
       <Navbar />
       <main className="pt-16">
         <Routes>
-          <Route path="/" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
+          <Route path="/" element={<ProtectedRoute><HomeDashboardPage /></ProtectedRoute>} />
+          <Route path="/checker" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
           <Route path="/admin" element={<MasterRoute><AdminPage /></MasterRoute>} />
           <Route path="/admin/logs" element={<MasterRoute><AdminLogsPage /></MasterRoute>} />
           <Route path="/admin/cookies" element={<AdminCookiesRoute><AdminCookiesPage /></AdminCookiesRoute>} />
