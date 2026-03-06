@@ -58,8 +58,8 @@ export default function HomeDashboardPage() {
   const tierLabel = isMaster ? 'Master' : isPremium ? 'Premium' : 'Free';
 
   return (
-    <div className="min-h-screen bg-[#050505]">
-      <div className="max-w-5xl mx-auto px-6 py-8 md:py-12">
+    <div className="min-h-[calc(100vh-9rem)] bg-[#050505]">
+      <div className="max-w-5xl mx-auto px-6 py-4 md:py-6">
         <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }}>
           <div className="rounded-2xl p-6 md:p-8 bg-gradient-to-b from-white/10 to-white/[0.03] border border-white/20 shadow-[inset_0_1px_0_rgba(255,255,255,0.15),0_8px_24px_rgba(0,0,0,0.6)]">
             <h1 className="font-bebas text-4xl sm:text-5xl tracking-wider text-white">
