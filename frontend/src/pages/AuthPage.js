@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 import { Shield, Key, Loader2, Gift } from 'lucide-react';
 import { motion } from 'framer-motion';
 
-const WORK_INK_URL = 'https://work.ink/2m5O/my-checker';
+const WORK_INK_URL = 'https://work.ink/2m5O/my-checker?redirect=https://schiro.eu.cc/claim';
 
 export default function AuthPage() {
   const [accessKey, setAccessKey] = useState('');
@@ -37,6 +37,7 @@ export default function AuthPage() {
   };
 
   const handleTrialAccess = () => {
+    sessionStorage.setItem('trial_from_ad', '1');
     window.location.href = WORK_INK_URL;
   };
 
