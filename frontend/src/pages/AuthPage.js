@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 import { Shield, Key, Loader2, Gift } from 'lucide-react';
 import { motion } from 'framer-motion';
 
-const LINKVERTISE_URL = 'https://link-target.net/4075828/qup3I3cGAV85';
+const LINKVERTISE_URL = 'https://link-hub.net/4075828/ngOtBP408Mcl';
 
 export default function AuthPage() {
   const [accessKey, setAccessKey] = useState('');
