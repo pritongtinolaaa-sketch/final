@@ -805,17 +805,28 @@ export default function FreeCookiesPage() {
 
   const refreshTokens = async () => {
     setRefreshing(true);
+
     try {
-      const res = await axios.post(
-        `${API}/admin/free-cookies/refresh`,
-        {},
-        { headers },
-      );
-      toast.success(res.data.message || 'Tokens refreshed');
+      const batchSize = 25; // safe for FastAPI
+      const total = cookies.length;
+
+      for (let i = 0; i < total; i += batchSize) {
+        const batch = cookies.slice(i, i + batchSize);
+
+        await Promise.all(
+          batch.map((cookie) => {
+            const endpoint = `${API}/free-cookies/${cookie.id}/refresh-token`;
+            return axios.post(endpoint, {}, { headers });
+          })
+        );
+      }
+
+      toast.success("All tokens refreshed");
       fetchCookies(page, filters);
+
     } catch (err) {
       toast.error(
-        err.response?.data?.detail || 'Failed to refresh free tokens',
+        err.response?.data?.detail || "Failed to refresh free tokens"
       );
     } finally {
       setRefreshing(false);
