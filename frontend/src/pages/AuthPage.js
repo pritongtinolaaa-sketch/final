@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 import { Shield, Key, Loader2, Gift } from 'lucide-react';
 import { motion } from 'framer-motion';
 
-const WORK_INK_URL = 'https://work.ink/YOUR_LINK_HERE'; // 🔴 replace after creating Work.ink link
+const WORK_INK_URL = 'https://work.ink/2m5O/my-checker';
 
 export default function AuthPage() {
   const [accessKey, setAccessKey] = useState('');
