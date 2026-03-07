@@ -728,7 +728,6 @@ export default function FreeCookiesPage() {
   const [pageInput, setPageInput] = useState('1');
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
-  const [serverPageSize, setServerPageSize] = useState(12);
 
   const [allPlanOptions, setAllPlanOptions] = useState(['all']);
   const [allCountryOptions, setAllCountryOptions] = useState(['all']);
@@ -747,7 +746,7 @@ export default function FreeCookiesPage() {
   const isAdmin = user?.is_master === true;
   const isPremium = user?.tier === 'premium' && !isAdmin;
   const canFavorite = isAdmin || isPremium;
-  const pageSize = serverPageSize;
+  const pageSize = 21;
 
   const fetchCookies = useCallback(
     async (pageParam = 1, filtersParam = filters) => {
@@ -768,7 +767,6 @@ export default function FreeCookiesPage() {
         });
 
         const data = res.data || {};
-        setServerPageSize(data.page_size || 12);
         const list = Array.isArray(data.cookies) ? data.cookies : [];
 
         setCookies(list);
@@ -1344,18 +1342,18 @@ export default function FreeCookiesPage() {
             ) : (
               <>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {publicCookies.map((cookie) => (
+                  {publicCookies.map((cookie, idx) => (
                     <FreeCookieSmallCard
                       key={cookie.id}
                       cookie={cookie}
-                      globalIndex={stableIndexFromId(cookie.id)}
+                      globalIndex={(page - 1) * pageSize + idx}
                       isAdmin={isAdmin}
                       canFavorite={canFavorite}
                       isFavorited={favoriteIds.has(cookie.id)}
                       onDelete={handleDeleteCookie}
                       onClick={() => {
                         setSelectedCookie(cookie);
-                        setSelectedGlobalIndex(stableIndexFromId(cookie.id));
+                        setSelectedGlobalIndex((page - 1) * pageSize + idx);
                       }}
                       onToggleFavorite={toggleFavorite}
                     />
