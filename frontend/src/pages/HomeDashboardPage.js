@@ -166,7 +166,7 @@ export default function HomeDashboardPage() {
                         <span className="relative z-10">MASTER</span>
 
                         <motion.span
-                          className="pointer-events-none absolute inset-y-0 left-[-35%] w-[38%] z-0 skew-x-[-20deg] bg-gradient-to-r from-transparent via-white/90 to-transparent"
+                          className="pointer-events-none absolute inset-y-0 left-[-35%] z-0 w-[38%] skew-x-[-20deg] bg-gradient-to-r from-transparent via-white/80 to-transparent"
                           animate={{ x: ['0%', '320%'] }}
                           transition={{
                             duration: 2.4,
@@ -178,11 +178,11 @@ export default function HomeDashboardPage() {
                       </Badge>
 
                       <motion.span
-                        className="pointer-events-none absolute -top-1 left-[18%] h-1 w-1 rounded-full bg-white shadow-[0_0_8px_rgba(255,255,255,0.95)]"
+                        className="pointer-events-none absolute -top-1 left-[18%] h-1.5 w-1.5 rotate-45 bg-white shadow-[0_0_10px_rgba(255,255,255,0.9)]"
                         animate={{
                           opacity: [0, 1, 0],
-                          scale: [0.5, 1.6, 0.5],
-                          y: [0, -3, 0],
+                          scale: [0.6, 1.5, 0.6],
+                          y: [0, -4, 0],
                         }}
                         transition={{
                           duration: 1.8,
@@ -193,25 +193,25 @@ export default function HomeDashboardPage() {
                       />
 
                       <motion.span
-                        className="pointer-events-none absolute top-1/2 -right-1 h-1.5 w-1.5 rounded-full bg-yellow-50 shadow-[0_0_10px_rgba(255,248,200,1)]"
+                        className="pointer-events-none absolute top-1/2 -right-1 h-2 w-2 rotate-45 bg-yellow-100 shadow-[0_0_12px_rgba(255,240,160,1)]"
                         animate={{
                           opacity: [0, 1, 0],
-                          scale: [0.4, 1.8, 0.4],
-                          x: [0, 2, 0],
+                          scale: [0.5, 1.7, 0.5],
+                          x: [0, 3, 0],
                           y: [0, -2, 0],
                         }}
                         transition={{
-                          duration: 2.2,
+                          duration: 2.1,
                           repeat: Infinity,
                           ease: 'easeInOut',
-                          delay: 0.6,
+                          delay: 0.7,
                         }}
                       />
 
                       <motion.span
-                        className="pointer-events-none absolute -bottom-0.5 right-[22%] h-1 w-1 rounded-full bg-white shadow-[0_0_8px_rgba(255,255,255,0.95)]"
+                        className="pointer-events-none absolute -bottom-0.5 right-[22%] h-1.5 w-1.5 rotate-45 bg-white shadow-[0_0_10px_rgba(255,255,255,0.9)]"
                         animate={{
-                          opacity: [0, 0.9, 0],
+                          opacity: [0, 1, 0],
                           scale: [0.5, 1.4, 0.5],
                           y: [0, 2, 0],
                         }}
@@ -219,7 +219,7 @@ export default function HomeDashboardPage() {
                           duration: 1.9,
                           repeat: Infinity,
                           ease: 'easeInOut',
-                          delay: 1.1,
+                          delay: 1.2,
                         }}
                       />
 
