@@ -14,6 +14,190 @@ const DEFAULT_GUIDE = {
   tv: 'Open a cookie card, use TV sign-in code, then activate from the site.',
 };
 
+function TierBadge({ label, theme = 'master' }) {
+  const isMaster = theme === 'master';
+
+  const badgeClass = isMaster
+    ? 'border-yellow-100/90 bg-gradient-to-r from-amber-300 via-yellow-100 to-amber-300 text-amber-950 ring-amber-200/60 shadow-[0_0_14px_rgba(251,191,36,0.9),0_0_26px_rgba(245,158,11,0.55),inset_0_1px_0_rgba(255,255,255,0.95),inset_0_-1px_1px_rgba(146,64,14,0.35)]'
+    : 'border-purple-300/40 bg-gradient-to-r from-purple-600/35 via-violet-500/30 to-purple-600/35 text-purple-200 ring-purple-400/25 shadow-[0_0_8px_rgba(168,85,247,0.35),inset_0_1px_0_rgba(255,255,255,0.18),inset_0_-1px_1px_rgba(46,16,101,0.3)]';
+
+  const shineClass = isMaster
+    ? 'from-transparent via-white/80 to-transparent'
+    : 'from-transparent via-white/70 to-transparent';
+
+  const sparkleLeftClass = isMaster
+    ? 'text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.98)]'
+    : 'text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.9)]';
+
+  const sparkleTopClass = isMaster
+    ? 'text-yellow-50 drop-shadow-[0_0_8px_rgba(255,248,200,1)]'
+    : 'text-violet-100 drop-shadow-[0_0_8px_rgba(200,170,255,1)]';
+
+  const sparkleRightClass = isMaster
+    ? 'text-yellow-100 drop-shadow-[0_0_10px_rgba(255,248,200,1)]'
+    : 'text-purple-200 drop-shadow-[0_0_10px_rgba(168,85,247,0.9)]';
+
+  const sparkleBottomClass = isMaster
+    ? 'text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.98)]'
+    : 'text-violet-100 drop-shadow-[0_0_8px_rgba(216,180,255,0.95)]';
+
+  const orbitOneClass = isMaster
+    ? 'bg-amber-100/90 shadow-[0_0_10px_rgba(255,235,160,0.95)]'
+    : 'bg-purple-200/90 shadow-[0_0_10px_rgba(168,85,247,0.9)]';
+
+  const orbitTwoClass = isMaster
+    ? 'bg-yellow-50/95 shadow-[0_0_8px_rgba(255,245,190,1)]'
+    : 'bg-violet-200/95 shadow-[0_0_8px_rgba(200,170,255,1)]';
+
+  const orbitThreeClass = isMaster
+    ? 'bg-amber-200/90 shadow-[0_0_8px_rgba(255,220,120,0.95)]'
+    : 'bg-fuchsia-200/90 shadow-[0_0_8px_rgba(232,180,255,0.95)]';
+
+  return (
+    <div className="relative inline-flex items-center justify-center overflow-visible">
+      <div className="relative inline-flex items-center justify-center overflow-visible px-3 py-2">
+        <Badge
+          className={`relative z-10 overflow-hidden rounded-full border px-2 py-0.5 text-[9px] font-mono font-bold uppercase tracking-wider ring-1 ${badgeClass}`}
+        >
+          <span className="relative z-10">{label}</span>
+
+          <motion.span
+            className={`pointer-events-none absolute inset-y-0 left-[-38%] z-0 w-[36%] skew-x-[-20deg] bg-gradient-to-r ${shineClass}`}
+            animate={{ x: ['0%', '340%'] }}
+            transition={{
+              duration: 2.5,
+              repeat: Infinity,
+              repeatDelay: 1.2,
+              ease: 'easeInOut',
+            }}
+          />
+        </Badge>
+
+        <motion.span
+          className={`pointer-events-none absolute left-[-10px] top-1/2 z-20 text-[10px] leading-none ${sparkleLeftClass}`}
+          animate={{
+            opacity: [0, 1, 0],
+            scale: [0.65, 1.15, 0.65],
+            x: [0, -1, 0],
+            y: [-1, -5, -1],
+            rotate: [0, -10, 0],
+          }}
+          transition={{
+            duration: 1.9,
+            repeat: Infinity,
+            ease: 'easeInOut',
+            delay: 0.1,
+          }}
+        >
+          ✦
+        </motion.span>
+
+        <motion.span
+          className={`pointer-events-none absolute left-[18%] top-[-6px] z-20 text-[9px] leading-none ${sparkleTopClass}`}
+          animate={{
+            opacity: [0, 1, 0],
+            scale: [0.7, 1.1, 0.7],
+            y: [0, -4, 0],
+            rotate: [0, 10, 0],
+          }}
+          transition={{
+            duration: 1.8,
+            repeat: Infinity,
+            ease: 'easeInOut',
+            delay: 0.35,
+          }}
+        >
+          ✦
+        </motion.span>
+
+        <motion.span
+          className={`pointer-events-none absolute right-[-10px] top-1/2 z-20 text-[11px] leading-none ${sparkleRightClass}`}
+          animate={{
+            opacity: [0, 1, 0],
+            scale: [0.65, 1.25, 0.65],
+            x: [0, 2, 0],
+            y: [0, -3, 0],
+            rotate: [0, 10, 0],
+          }}
+          transition={{
+            duration: 2.1,
+            repeat: Infinity,
+            ease: 'easeInOut',
+            delay: 0.8,
+          }}
+        >
+          ✦
+        </motion.span>
+
+        <motion.span
+          className={`pointer-events-none absolute bottom-[-4px] right-[22%] z-20 text-[9px] leading-none ${sparkleBottomClass}`}
+          animate={{
+            opacity: [0, 1, 0],
+            scale: [0.7, 1.1, 0.7],
+            y: [0, 3, 0],
+            rotate: [0, 8, 0],
+          }}
+          transition={{
+            duration: 1.9,
+            repeat: Infinity,
+            ease: 'easeInOut',
+            delay: 1.25,
+          }}
+        >
+          ✦
+        </motion.span>
+
+        <motion.span
+          className={`pointer-events-none absolute z-0 h-1.5 w-1.5 rounded-full ${orbitOneClass}`}
+          animate={{
+            x: [-18, -5, 10, 18, 8, -10, -18],
+            y: [0, -10, -12, 0, 10, 8, 0],
+            opacity: [0.2, 0.8, 0.95, 0.6, 0.9, 0.5, 0.2],
+            scale: [0.75, 1, 1.15, 0.95, 1.1, 0.9, 0.75],
+          }}
+          transition={{
+            duration: 5.5,
+            repeat: Infinity,
+            ease: 'linear',
+          }}
+        />
+
+        <motion.span
+          className={`pointer-events-none absolute z-0 h-1 w-1 rounded-full ${orbitTwoClass}`}
+          animate={{
+            x: [16, 4, -10, -18, -8, 12, 16],
+            y: [0, 10, 12, 0, -10, -8, 0],
+            opacity: [0.2, 0.65, 0.9, 0.55, 0.85, 0.45, 0.2],
+            scale: [0.7, 0.95, 1.1, 0.9, 1.05, 0.85, 0.7],
+          }}
+          transition={{
+            duration: 4.8,
+            repeat: Infinity,
+            ease: 'linear',
+            delay: 0.9,
+          }}
+        />
+
+        <motion.span
+          className={`pointer-events-none absolute z-0 h-1 w-1 rounded-full ${orbitThreeClass}`}
+          animate={{
+            x: [-4, 12, 18, 4, -14, -18, -4],
+            y: [-12, -8, 0, 10, 12, 0, -12],
+            opacity: [0.15, 0.55, 0.85, 0.55, 0.9, 0.45, 0.15],
+            scale: [0.65, 0.9, 1.05, 0.9, 1.05, 0.85, 0.65],
+          }}
+          transition={{
+            duration: 6.2,
+            repeat: Infinity,
+            ease: 'linear',
+            delay: 1.6,
+          }}
+        />
+      </div>
+    </div>
+  );
+}
+
 export default function HomeDashboardPage() {
   const { token, user } = useAuth();
   const [counts, setCounts] = useState({ free: 0, admin: 0, total: 0 });
@@ -146,12 +330,12 @@ export default function HomeDashboardPage() {
 
   return (
     <div className="min-h-[calc(100vh-9rem)] bg-[#050505]">
-      <div className="max-w-5xl mx-auto px-6 py-4 md:py-6">
+      <div className="mx-auto max-w-5xl px-6 py-4 md:py-6">
         <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }}>
           <div className="rounded-2xl border border-white/20 bg-gradient-to-b from-white/10 to-white/[0.03] p-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.15),0_8px_24px_rgba(0,0,0,0.6)] md:p-8">
             <div className="grid grid-cols-1 items-stretch gap-6 md:grid-cols-2">
               <div className="flex flex-col">
-                <h1 className="text-3xl font-sans font-semibold tracking-normal text-white sm:text-4xl">
+                <h1 className="text-3xl font-sans font-semibold normal-case tracking-normal text-white sm:text-4xl">
                   Hi, <span className="text-primary">{greetingName}</span>!
                 </h1>
 
@@ -159,149 +343,9 @@ export default function HomeDashboardPage() {
                   <span className="text-sm font-mono text-white/50">Current tier:</span>
 
                   {isMaster ? (
-                    <div className="relative inline-flex items-center justify-center overflow-visible">
-                      <div className="relative inline-flex items-center justify-center overflow-visible px-3 py-2">
-                        <Badge className="relative z-10 overflow-hidden rounded-full border border-yellow-100/90 bg-gradient-to-r from-amber-300 via-yellow-100 to-amber-300 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-amber-950 ring-1 ring-amber-200/60 shadow-[0_0_14px_rgba(251,191,36,0.9),0_0_26px_rgba(245,158,11,0.55),inset_0_1px_0_rgba(255,255,255,0.95),inset_0_-1px_1px_rgba(146,64,14,0.35)]">
-                          <span className="relative z-10 font-mono">MASTER</span>
-
-                          <motion.span
-                            className="pointer-events-none absolute inset-y-0 left-[-38%] z-0 w-[36%] skew-x-[-20deg] bg-gradient-to-r from-transparent via-white/80 to-transparent"
-                            animate={{ x: ['0%', '340%'] }}
-                            transition={{
-                              duration: 2.5,
-                              repeat: Infinity,
-                              repeatDelay: 1.2,
-                              ease: 'easeInOut',
-                            }}
-                          />
-                        </Badge>
-
-                        <motion.span
-                          className="pointer-events-none absolute left-[-10px] top-1/2 z-20 text-[10px] leading-none text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.98)]"
-                          animate={{
-                            opacity: [0, 1, 0],
-                            scale: [0.65, 1.15, 0.65],
-                            x: [0, -1, 0],
-                            y: [-1, -5, -1],
-                            rotate: [0, -10, 0],
-                          }}
-                          transition={{
-                            duration: 1.9,
-                            repeat: Infinity,
-                            ease: 'easeInOut',
-                            delay: 0.1,
-                          }}
-                        >
-                          ✦
-                        </motion.span>
-
-                        <motion.span
-                          className="pointer-events-none absolute left-[18%] top-[-6px] z-20 text-[9px] leading-none text-yellow-50 drop-shadow-[0_0_8px_rgba(255,248,200,1)]"
-                          animate={{
-                            opacity: [0, 1, 0],
-                            scale: [0.7, 1.1, 0.7],
-                            y: [0, -4, 0],
-                            rotate: [0, 10, 0],
-                          }}
-                          transition={{
-                            duration: 1.8,
-                            repeat: Infinity,
-                            ease: 'easeInOut',
-                            delay: 0.35,
-                          }}
-                        >
-                          ✦
-                        </motion.span>
-
-                        <motion.span
-                          className="pointer-events-none absolute right-[-10px] top-1/2 z-20 text-[11px] leading-none text-yellow-100 drop-shadow-[0_0_10px_rgba(255,248,200,1)]"
-                          animate={{
-                            opacity: [0, 1, 0],
-                            scale: [0.65, 1.25, 0.65],
-                            x: [0, 2, 0],
-                            y: [0, -3, 0],
-                            rotate: [0, 10, 0],
-                          }}
-                          transition={{
-                            duration: 2.1,
-                            repeat: Infinity,
-                            ease: 'easeInOut',
-                            delay: 0.8,
-                          }}
-                        >
-                          ✦
-                        </motion.span>
-
-                        <motion.span
-                          className="pointer-events-none absolute bottom-[-4px] right-[22%] z-20 text-[9px] leading-none text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.98)]"
-                          animate={{
-                            opacity: [0, 1, 0],
-                            scale: [0.7, 1.1, 0.7],
-                            y: [0, 3, 0],
-                            rotate: [0, 8, 0],
-                          }}
-                          transition={{
-                            duration: 1.9,
-                            repeat: Infinity,
-                            ease: 'easeInOut',
-                            delay: 1.25,
-                          }}
-                        >
-                          ✦
-                        </motion.span>
-
-                        <motion.span
-                          className="pointer-events-none absolute z-0 h-1.5 w-1.5 rounded-full bg-amber-100/90 shadow-[0_0_10px_rgba(255,235,160,0.95)]"
-                          animate={{
-                            x: [-18, -5, 10, 18, 8, -10, -18],
-                            y: [0, -10, -12, 0, 10, 8, 0],
-                            opacity: [0.2, 0.8, 0.95, 0.6, 0.9, 0.5, 0.2],
-                            scale: [0.75, 1, 1.15, 0.95, 1.1, 0.9, 0.75],
-                          }}
-                          transition={{
-                            duration: 5.5,
-                            repeat: Infinity,
-                            ease: 'linear',
-                          }}
-                        />
-
-                        <motion.span
-                          className="pointer-events-none absolute z-0 h-1 w-1 rounded-full bg-yellow-50/95 shadow-[0_0_8px_rgba(255,245,190,1)]"
-                          animate={{
-                            x: [16, 4, -10, -18, -8, 12, 16],
-                            y: [0, 10, 12, 0, -10, -8, 0],
-                            opacity: [0.2, 0.65, 0.9, 0.55, 0.85, 0.45, 0.2],
-                            scale: [0.7, 0.95, 1.1, 0.9, 1.05, 0.85, 0.7],
-                          }}
-                          transition={{
-                            duration: 4.8,
-                            repeat: Infinity,
-                            ease: 'linear',
-                            delay: 0.9,
-                          }}
-                        />
-
-                        <motion.span
-                          className="pointer-events-none absolute z-0 h-1 w-1 rounded-full bg-amber-200/90 shadow-[0_0_8px_rgba(255,220,120,0.95)]"
-                          animate={{
-                            x: [-4, 12, 18, 4, -14, -18, -4],
-                            y: [-12, -8, 0, 10, 12, 0, -12],
-                            opacity: [0.15, 0.55, 0.85, 0.55, 0.9, 0.45, 0.15],
-                            scale: [0.65, 0.9, 1.05, 0.9, 1.05, 0.85, 0.65],
-                          }}
-                          transition={{
-                            duration: 6.2,
-                            repeat: Infinity,
-                            ease: 'linear',
-                            delay: 1.6,
-                          }}
-                        />
-                      </div>
-                    </div>
+                    <TierBadge label="MASTER" theme="master" />
                   ) : isPremium ? (
-                    <Badge className="rounded-full border border-purple-300/40 bg-gradient-to-r from-purple-600/35 via-violet-500/30 to-purple-600/35 px-2 py-0.5 text-[9px] font-mono font-bold uppercase tracking-wider text-purple-200 ring-1 ring-purple-400/25 shadow-[0_0_8px_rgba(168,85,247,0.35),inset_0_1px_0_rgba(255,255,255,0.18),inset_0_-1px_1px_rgba(46,16,101,0.3)]">
-                      PREMIUM
-                    </Badge>
+                    <TierBadge label="PREMIUM" theme="premium" />
                   ) : (
                     <Badge className="rounded-sm border border-white/10 bg-white/10 px-1.5 py-0.5 text-[9px] font-mono font-bold uppercase tracking-wider text-white/40">
                       FREE
@@ -346,7 +390,7 @@ export default function HomeDashboardPage() {
                 </div>
               </div>
 
-              <div className="flex min-h-[250px] h-full flex-col rounded-xl border border-primary/35 bg-gradient-to-b from-primary/12 to-white/[0.02] p-5 shadow-[0_0_20px_rgba(229,9,20,0.2),inset_0_1px_0_rgba(255,255,255,0.2)]">
+              <div className="flex h-full min-h-[250px] flex-col rounded-xl border border-primary/35 bg-gradient-to-b from-primary/12 to-white/[0.02] p-5 shadow-[0_0_20px_rgba(229,9,20,0.2),inset_0_1px_0_rgba(255,255,255,0.2)]">
                 <div className="mb-3 flex items-center justify-between">
                   <span className="font-bebas text-2xl tracking-widest text-primary drop-shadow-[0_0_8px_rgba(229,9,20,0.35)]">
                     ADMIN NOTICE
