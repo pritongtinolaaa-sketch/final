@@ -4,8 +4,10 @@ import { useNavigate } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { Shield, Key, Loader2 } from 'lucide-react';
+import { Shield, Key, Loader2, Gift } from 'lucide-react';
 import { motion } from 'framer-motion';
+
+const WORK_INK_URL = 'https://work.ink/YOUR_LINK_HERE'; // 🔴 replace after creating Work.ink link
 
 export default function AuthPage() {
   const [accessKey, setAccessKey] = useState('');
@@ -34,9 +36,19 @@ export default function AuthPage() {
     }
   };
 
+  const handleTrialAccess = () => {
+    window.location.href = WORK_INK_URL;
+  };
+
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-[#050505] overflow-hidden">
-      <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse at center, rgba(229,9,20,0.06) 0%, transparent 60%)' }} />
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background:
+            'radial-gradient(ellipse at center, rgba(229,9,20,0.06) 0%, transparent 60%)',
+        }}
+      />
 
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -47,10 +59,15 @@ export default function AuthPage() {
         <div className="bg-black/60 backdrop-blur-xl border border-white/10 rounded-md p-6 md:p-8">
           <div className="text-center mb-5">
             <Shield className="w-9 h-9 text-primary mx-auto mb-2" />
-            <h1 className="font-bebas text-4xl sm:text-5xl tracking-wider text-white" data-testid="auth-title">
+            <h1
+              className="font-bebas text-4xl sm:text-5xl tracking-wider text-white"
+              data-testid="auth-title"
+            >
               SCHIRO
             </h1>
-            <p className="text-primary font-bebas text-lg tracking-widest mt-1">COOKIE CHECKER</p>
+            <p className="text-primary font-bebas text-lg tracking-widest mt-1">
+              COOKIE CHECKER
+            </p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4" data-testid="auth-form">
@@ -61,8 +78,9 @@ export default function AuthPage() {
                 type="password"
                 placeholder="Enter access key"
                 value={accessKey}
-                onChange={e => setAccessKey(e.target.value)}
+                onChange={(e) => setAccessKey(e.target.value)}
                 required
+                autoComplete="off"
                 className="pl-10 bg-black/50 border-white/10 focus:border-primary focus:ring-1 focus:ring-primary/50 text-white placeholder:text-white/30 rounded-sm h-12 font-mono"
               />
             </div>
@@ -73,11 +91,24 @@ export default function AuthPage() {
               disabled={submitting || !accessKey.trim()}
               className="w-full h-12 bg-primary hover:bg-red-700 text-white font-bebas tracking-widest text-lg uppercase rounded-sm shadow-[0_0_15px_rgba(229,9,20,0.4)] transition-all hover:scale-[1.02] active:scale-95"
             >
-              {submitting ? (
-                <Loader2 className="w-5 h-5 animate-spin" />
-              ) : (
-                'ACCESS'
-              )}
+              {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : 'ACCESS'}
+            </Button>
+
+            <div className="relative flex items-center gap-3">
+              <div className="flex-1 h-px bg-white/10" />
+              <span className="text-white/20 text-xs font-mono">OR</span>
+              <div className="flex-1 h-px bg-white/10" />
+            </div>
+
+            <Button
+              type="button"
+              data-testid="auth-trial-btn"
+              disabled={submitting}
+              onClick={handleTrialAccess}
+              className="w-full h-12 bg-white/5 hover:bg-white/10 border border-white/10 text-white font-bebas tracking-widest text-lg uppercase rounded-sm transition-all hover:scale-[1.02] active:scale-95"
+            >
+              <Gift className="w-5 h-5 mr-2" />
+              GET 30-MIN FREE ACCESS
             </Button>
           </form>
 
