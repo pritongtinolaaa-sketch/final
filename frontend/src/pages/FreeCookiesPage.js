@@ -929,7 +929,7 @@ export default function FreeCookiesPage() {
           `Profiles: ${cookie.profiles?.length > 0 ? cookie.profiles.join(', ') : 'N/A'}`,
         ].join('\n');
 
-        return `${info}\n${'='.repeat(50)}\n${cookie.full_cookie || cookie.browser_cookies || 'No cookie data'}\n${'='.repeat(50)}`;
+        return `${info}\n${'='.repeat(50)}\n${cookie.browser_cookies || 'No browser cookie data'}\n${'='.repeat(50)}`;
       }).join('\n\n');
 
       const dataBlob = new Blob([textContent], { type: 'text/plain' });
