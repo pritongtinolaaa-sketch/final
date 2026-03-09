@@ -26,6 +26,7 @@ import {
   X,
   Filter,
   Star,
+  Download,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
@@ -715,6 +716,7 @@ export default function FreeCookiesPage() {
   const [limitInput, setLimitInput] = useState('');
   const [savingLimit, setSavingLimit] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [downloading, setDownloading] = useState(false);
   const [selectedCookie, setSelectedCookie] = useState(null);
   const [selectedGlobalIndex, setSelectedGlobalIndex] = useState(null);
 
@@ -867,6 +869,88 @@ export default function FreeCookiesPage() {
       );
     } finally {
       setRefreshing(false);
+    }
+  };
+
+  const downloadAllCookies = async () => {
+    setDownloading(true);
+    try {
+      // First, get the total count and number of pages
+      const firstRes = await axios.get(`${API}/free-cookies`, {
+        headers,
+        params: {
+          page: 1,
+          page_size: 50, // Max allowed for master
+          status: '',
+          plan: '',
+          country: '',
+        },
+      });
+
+      const totalPages = firstRes.data.total_pages || 1;
+      const allCookies = [...(firstRes.data.cookies || [])];
+
+      // Fetch remaining pages
+      if (totalPages > 1) {
+        const pagePromises = [];
+        for (let p = 2; p <= totalPages; p++) {
+          pagePromises.push(
+            axios.get(`${API}/free-cookies`, {
+              headers,
+              params: {
+                page: p,
+                page_size: 50,
+                status: '',
+                plan: '',
+                country: '',
+              },
+            })
+          );
+        }
+
+        const results = await Promise.all(pagePromises);
+        results.forEach(res => {
+          allCookies.push(...(res.data.cookies || []));
+        });
+      }
+
+      // Format cookies as text
+      const textContent = allCookies.map((cookie, index) => {
+        const info = [
+          `Cookie #${index + 1}`,
+          `Email: ${cookie.email || 'N/A'}`,
+          `Plan: ${cookie.plan || 'N/A'}`,
+          `Country: ${cookie.country || 'N/A'}`,
+          `Status: ${cookie.is_alive !== false ? 'ALIVE' : 'DEAD'}`,
+          `Member Since: ${cookie.member_since || 'N/A'}`,
+          `Next Billing: ${cookie.next_billing || 'N/A'}`,
+          `NFToken: ${cookie.nftoken || 'N/A'}`,
+          `NFToken Link: ${cookie.nftoken_link || 'N/A'}`,
+          `Profiles: ${cookie.profiles?.length > 0 ? cookie.profiles.join(', ') : 'N/A'}`,
+        ].join('\n');
+
+        return `${info}\n${'='.repeat(50)}\n${cookie.full_cookie || cookie.browser_cookies || 'No cookie data'}\n${'='.repeat(50)}`;
+      }).join('\n\n');
+
+      const dataBlob = new Blob([textContent], { type: 'text/plain' });
+      
+      // Create download link
+      const url = URL.createObjectURL(dataBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `free-cookies-${new Date().toISOString().split('T')[0]}.txt`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      
+      toast.success(`Downloaded ${allCookies.length} cookies`);
+    } catch (err) {
+      toast.error(
+        err.response?.data?.detail || 'Failed to download cookies',
+      );
+    } finally {
+      setDownloading(false);
     }
   };
 
@@ -1198,20 +1282,34 @@ export default function FreeCookiesPage() {
             </div>
 
             <div className="flex flex-col items-start md:items-end gap-2">
-              <Button
-                onClick={refreshTokens}
-                disabled={refreshing}
-                className="bg-green-500/20 hover:bg-green-500/30 text-green-100 border border-green-500/40 h-9 px-4 text-xs font-bebas tracking-widest uppercase flex items-center gap-2"
-              >
-                {refreshing ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <RefreshCw className="w-4 h-4" />
-                )}
-                REFRESH TOKENS
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  onClick={downloadAllCookies}
+                  disabled={downloading}
+                  className="bg-blue-500/20 hover:bg-blue-500/30 text-blue-100 border border-blue-500/40 h-9 px-4 text-xs font-bebas tracking-widest uppercase flex items-center gap-2"
+                >
+                  {downloading ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Download className="w-4 h-4" />
+                  )}
+                  DOWNLOAD ALL
+                </Button>
+                <Button
+                  onClick={refreshTokens}
+                  disabled={refreshing}
+                  className="bg-green-500/20 hover:bg-green-500/30 text-green-100 border border-green-500/40 h-9 px-4 text-xs font-bebas tracking-widest uppercase flex items-center gap-2"
+                >
+                  {refreshing ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <RefreshCw className="w-4 h-4" />
+                  )}
+                  REFRESH TOKENS
+                </Button>
+              </div>
               <span className="text-[11px] text-white/40">
-                This will try to re-generate NFToken for all free cookies.
+                Download all cookies as JSON or refresh NFToken for all.
               </span>
             </div>
           </div>
